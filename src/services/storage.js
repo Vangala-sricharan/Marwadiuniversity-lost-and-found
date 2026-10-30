@@ -301,3 +301,57 @@ export const saveNewReport = (reportData) => {
     throw new Error('Failed to save report to browser storage. Please try again.');
   }
 };
+
+/**
+ * Marks a lost item as found, updates its status, and triggers email notification to the owner
+ * @param {string} token 
+ * @param {Object} finderDetails
+ * @returns {Promise<{ updatedReport: Object, emailReceipt: Object }>}
+ */
+export const markItemAsFound = async (token, finderDetails) => {
+  const reports = getStoredReports();
+  const index = reports.findIndex(r => r.token === token || r.id === token);
+  if (index === -1) {
+    throw new Error('Report not found with this registration token.');
+  }
+
+  const existing = reports[index];
+  const now = new Date();
+
+  const sanitizedFinder = {
+    finderName: sanitizeText(finderDetails.finderName),
+    finderContact: sanitizeText(finderDetails.finderContact),
+    foundLocation: sanitizeText(finderDetails.foundLocation),
+    note: sanitizeText(finderDetails.note || ''),
+    markedAt: now.toISOString(),
+    formattedMarkedAt: formatDisplayDateTime(now),
+  };
+
+  const updatedReport = {
+    ...existing,
+    status: 'Found / Ready for Claim',
+    foundDetails: sanitizedFinder,
+    updatedAt: now.toISOString(),
+  };
+
+  reports[index] = updatedReport;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+  } catch (err) {
+    console.error('Failed saving updated status to storage:', err);
+  }
+
+  // Send email notification to the original student owner
+  let emailReceipt = null;
+  try {
+    const { sendItemFoundEmailNotification } = await import('./emailService.js');
+    emailReceipt = await sendItemFoundEmailNotification({
+      report: updatedReport,
+      finderDetails: sanitizedFinder,
+    });
+  } catch (emailErr) {
+    console.warn('Email notification dispatch notice:', emailErr);
+  }
+
+  return { updatedReport, emailReceipt };
+};

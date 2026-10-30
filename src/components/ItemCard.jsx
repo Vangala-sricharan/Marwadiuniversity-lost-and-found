@@ -16,16 +16,23 @@ export default function ItemCard({ item, onSelect }) {
     >
       {/* Top Banner & Status */}
       <div className="p-4 pb-0 flex items-center justify-between gap-2">
-        <span 
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${
-            isLost 
-              ? 'bg-rose-50 text-rose-700 border border-rose-200/70' 
-              : 'bg-teal-50 text-teal-700 border border-teal-200/70'
-          }`}
-        >
-          <span className={`w-2 h-2 rounded-full ${isLost ? 'bg-rose-500 animate-pulse' : 'bg-teal-500'}`}></span>
-          {isLost ? 'Lost Item' : 'Found Item'}
-        </span>
+        {item.status === 'Found / Ready for Claim' ? (
+          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-50 text-emerald-800 border border-emerald-300">
+            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
+            Located / Ready
+          </span>
+        ) : (
+          <span 
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${
+              isLost 
+                ? 'bg-rose-50 text-rose-700 border border-rose-200/70' 
+                : 'bg-teal-50 text-teal-700 border border-teal-200/70'
+            }`}
+          >
+            <span className={`w-2 h-2 rounded-full ${isLost ? 'bg-rose-500 animate-pulse' : 'bg-teal-500'}`}></span>
+            {isLost ? 'Lost Item' : 'Found Item'}
+          </span>
+        )}
 
         <span className="text-[11px] font-mono text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded font-medium">
           {item.token || item.id}

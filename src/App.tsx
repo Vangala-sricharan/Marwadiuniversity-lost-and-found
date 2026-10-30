@@ -9,6 +9,8 @@ import BrowseItemsPage from './pages/BrowseItemsPage';
 import CampusGuidePage from './pages/CampusGuidePage';
 import TrackReportPage from './pages/TrackReportPage';
 import SubmissionSuccessPage from './pages/SubmissionSuccessPage';
+import TermsPage from './pages/TermsPage';
+import FAQPage from './pages/FAQPage';
 
 // Scroll to top helper on navigation
 function ScrollToTop() {
@@ -44,6 +46,8 @@ export default function App() {
             <Route path="/submission-success" element={<SubmissionSuccessPage />} />
             <Route path="/browse" element={<BrowseItemsPage />} />
             <Route path="/campus-guide" element={<CampusGuidePage />} />
+            <Route path="/terms" element={<TermsPage />} />
+            <Route path="/faq" element={<FAQPage />} />
             {/* Fallback route back to home */}
             <Route path="*" element={<HomePage />} />
           </Routes>

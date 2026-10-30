@@ -9,10 +9,13 @@ import {
   MapPin, 
   Clock, 
   Building2, 
-  Info
+  Info,
+  QrCode,
+  Printer
 } from 'lucide-react';
 import { getReportByToken } from '../services/storage';
 import { imageAssets } from '../config/imageAssets';
+import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
 
 export default function SubmissionSuccessPage() {
   const location = useLocation();
@@ -22,6 +25,7 @@ export default function SubmissionSuccessPage() {
   const [report, setReport] = useState(null);
   const [copied, setCopied] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
     // 1. Try to get report from router state
@@ -230,6 +234,35 @@ export default function SubmissionSuccessPage() {
               </div>
             </div>
 
+            {/* Belonging QR Code Tag Generator Banner */}
+            <div className="bg-gradient-to-r from-slate-900 to-[#0F2347] rounded-2xl p-5 text-white flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border border-slate-800 shadow-md">
+              <div className="flex items-start gap-3.5">
+                <div className="w-10 h-10 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30 flex items-center justify-center shrink-0">
+                  <QrCode className="w-5 h-5 text-cyan-300" />
+                </div>
+                <div>
+                  <h4 className="text-sm font-bold text-white flex items-center gap-2">
+                    <span>Print Belonging QR Tag</span>
+                    <span className="px-2 py-0.5 rounded-full bg-cyan-400/20 text-cyan-300 text-[10px] font-bold tracking-wider uppercase border border-cyan-400/30">
+                      New
+                    </span>
+                  </h4>
+                  <p className="text-xs text-slate-300 mt-0.5 leading-relaxed">
+                    Generate a printable sticker tag with a direct QR code for this report to stick on your belonging.
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={() => setShowQRModal(true)}
+                className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 text-slate-950 font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-all shadow-sm shrink-0 cursor-pointer"
+              >
+                <Printer className="w-4 h-4 text-slate-950" />
+                <span>Generate Tag</span>
+              </button>
+            </div>
+
             {/* Required Action Buttons: Copy Token, Track Report, Back to Home */}
             <div className="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3">
               <button
@@ -265,6 +298,14 @@ export default function SubmissionSuccessPage() {
         </div>
 
       </div>
+
+      {/* Printable QR Code Modal */}
+      {showQRModal && (
+        <PrintableQRCodeModal
+          report={report}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
     </div>
   );
 }

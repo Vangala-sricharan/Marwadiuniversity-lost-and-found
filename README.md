@@ -134,7 +134,9 @@ campusfind/
 │   │   ├── TrackReportPage.jsx               # 12-digit token tracking portal
 │   │   ├── SubmissionSuccessPage.jsx         # Post-submission confirmation page
 │   │   ├── BrowseItemsPage.jsx               # Public searchable directory
-│   │   └── CampusGuidePage.jsx               # Collection hubs & claiming checklist
+│   │   ├── CampusGuidePage.jsx               # Collection hubs & claiming checklist
+│   │   ├── TermsPage.jsx                     # Terms & conditions & prototype disclaimer
+│   │   └── FAQPage.jsx                       # Searchable accordion FAQ page
 │   ├── services/
 │   │   └── storage.js                        # Centralized LocalStorage service & seed data
 │   ├── utils/

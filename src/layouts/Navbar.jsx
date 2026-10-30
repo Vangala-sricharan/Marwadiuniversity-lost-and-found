@@ -10,7 +10,8 @@ import {
   Compass, 
   Building2, 
   HelpCircle,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
 
@@ -51,10 +52,15 @@ export default function Navbar() {
             </span>
           </div>
 
-          <div className="flex items-center gap-4 text-slate-300 text-[11px]">
-            <span className="hidden md:inline text-slate-400">Lost item assistance desk:</span>
-            <span className="font-medium text-white flex items-center gap-1">
-              <Clock className="w-3 h-3 text-cyan-400" /> Mon–Sat 8:30 AM – 6:00 PM
+          <div className="flex items-center gap-2 sm:gap-3 text-slate-300 text-[11px] flex-wrap justify-end">
+            <span className="font-medium text-white inline-flex items-center gap-1">
+              <MapPin className="w-3.5 h-3.5 text-teal-400 shrink-0" />
+              <span>Location: MB315</span>
+            </span>
+            <span className="text-slate-500 hidden xs:inline">|</span>
+            <span className="font-medium text-white inline-flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-cyan-400 shrink-0" />
+              <span>Mon–Sat 8:30 AM – 6:00 PM</span>
             </span>
           </div>
         </div>
@@ -147,6 +153,17 @@ export default function Navbar() {
                 }`}
               >
                 Collection Points
+              </Link>
+
+              <Link 
+                to="/faq" 
+                className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  location.pathname === '/faq' 
+                    ? 'text-teal-700 bg-teal-50/80' 
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/70'
+                }`}
+              >
+                FAQs
               </Link>
 
               <Link 
@@ -249,6 +266,24 @@ export default function Navbar() {
               >
                 <MapPin className="w-4 h-4 text-teal-600" />
                 Security & Collection Desks
+              </Link>
+              <Link
+                to="/faq"
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
+                  location.pathname === '/faq' ? 'bg-teal-50 text-teal-800 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <HelpCircle className="w-4 h-4 text-teal-600" />
+                Frequently Asked Questions
+              </Link>
+              <Link
+                to="/terms"
+                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
+                  location.pathname === '/terms' ? 'bg-teal-50 text-teal-800 font-semibold' : 'text-slate-700 hover:bg-slate-50'
+                }`}
+              >
+                <FileText className="w-4 h-4 text-teal-600" />
+                Terms &amp; Conditions
               </Link>
               <Link
                 to="/track"

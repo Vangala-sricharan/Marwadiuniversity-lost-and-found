@@ -9,11 +9,18 @@ import {
   AlertCircle, 
   Copy, 
   Check, 
-  ArrowRight
+  ArrowRight,
+  QrCode,
+  Printer,
+  CheckCircle2,
+  Mail,
+  Send
 } from 'lucide-react';
 import { getReportByToken } from '../services/storage';
 import { isValidTokenFormat } from '../utils/tokenGenerator';
 import { imageAssets } from '../config/imageAssets';
+import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
+import MarkAsFoundModal from '../components/MarkAsFoundModal';
 
 export default function TrackReportPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -24,6 +31,8 @@ export default function TrackReportPage() {
   const [searched, setSearched] = useState(false);
   const [copied, setCopied] = useState(false);
   const [validationError, setValidationError] = useState('');
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showMarkFoundModal, setShowMarkFoundModal] = useState(false);
 
   // Auto-search if token is present in URL
   useEffect(() => {
@@ -216,13 +225,20 @@ export default function TrackReportPage() {
                       </div>
                     </div>
 
-                    {/* Current Report Status: Initial "Submitted" */}
+                    {/* Current Report Status */}
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500 uppercase font-semibold">Current Status:</span>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold uppercase tracking-wider">
-                        <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                        {report.status || 'Submitted'}
-                      </span>
+                      {report.status === 'Found / Ready for Claim' ? (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold uppercase tracking-wider">
+                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                          Found / Ready for Claim
+                        </span>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold uppercase tracking-wider">
+                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
+                          {report.status || 'Submitted'}
+                        </span>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -302,6 +318,46 @@ export default function TrackReportPage() {
                     </div>
                   </div>
 
+                  {/* Found / Recovery Notice Banner if Item Marked Found */}
+                  {report.foundDetails && (
+                    <div className="bg-emerald-50 border border-emerald-200/90 rounded-2xl p-5 space-y-3 animate-in fade-in">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-emerald-900 font-bold text-sm">
+                          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+                          <span>Item Located &amp; Ready for Collection</span>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-emerald-200/90 text-emerald-950 text-xs font-bold w-fit">
+                          <Mail className="w-3.5 h-3.5 text-emerald-800" />
+                          Owner Email Notified
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white/90 p-4 rounded-xl border border-emerald-100">
+                        <div>
+                          <span className="text-slate-500 block mb-0.5">Finder Name:</span>
+                          <span className="font-semibold text-slate-900">{report.foundDetails.finderName}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block mb-0.5">Finder Contact:</span>
+                          <span className="font-semibold text-teal-800 font-mono">{report.foundDetails.finderContact}</span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-slate-500 block mb-0.5">Handover / Holding Location:</span>
+                          <span className="font-semibold text-emerald-900">{report.foundDetails.foundLocation}</span>
+                        </div>
+                        {report.foundDetails.note && (
+                          <div className="sm:col-span-2 pt-2 border-t border-emerald-100">
+                            <span className="text-slate-500 block mb-0.5">Finder Note:</span>
+                            <span className="italic text-slate-700">&quot;{report.foundDetails.note}&quot;</span>
+                          </div>
+                        )}
+                        <div className="sm:col-span-2 text-[11px] text-slate-400 pt-1">
+                          Marked found on: {report.foundDetails.formattedMarkedAt}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Physical Campus Visit Instruction */}
                   <div className="bg-amber-50 border border-amber-200 rounded-2xl p-4 flex items-start gap-3 text-xs text-amber-900">
                     <Building2 className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
@@ -311,6 +367,29 @@ export default function TrackReportPage() {
                         Present this 12-digit registration token (<span className="font-mono font-bold">{report.token}</span>) and your official student ID card at MB315 to confirm custody or claim this property.
                       </p>
                     </div>
+                  </div>
+
+                  {/* Interactive Action Controls */}
+                  <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
+                    <button
+                      type="button"
+                      onClick={() => setShowQRModal(true)}
+                      className="px-4 py-2.5 rounded-xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                    >
+                      <QrCode className="w-4 h-4 text-cyan-300" />
+                      <span>Print Belonging QR Tag</span>
+                    </button>
+
+                    {isLost && report.status !== 'Found / Ready for Claim' && (
+                      <button
+                        type="button"
+                        onClick={() => setShowMarkFoundModal(true)}
+                        className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
+                      >
+                        <CheckCircle2 className="w-4 h-4 text-white" />
+                        <span>I Found This Item (Mark Found &amp; Notify)</span>
+                      </button>
+                    )}
                   </div>
 
                 </div>
@@ -335,6 +414,25 @@ export default function TrackReportPage() {
         )}
 
       </div>
+
+      {/* Printable QR Code Modal */}
+      {showQRModal && report && (
+        <PrintableQRCodeModal
+          report={report}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
+
+      {/* Mark As Found Modal */}
+      {showMarkFoundModal && report && (
+        <MarkAsFoundModal
+          item={report}
+          onClose={() => setShowMarkFoundModal(false)}
+          onSuccess={(updated) => {
+            setReport(updated);
+          }}
+        />
+      )}
     </div>
   );
 }

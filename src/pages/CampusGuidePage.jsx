@@ -15,12 +15,12 @@ import { imageAssets } from '../config/imageAssets';
 export default function CampusGuidePage() {
   const collectionPoints = [
     {
-      title: 'MB315 Central Lost & Found Office',
-      tag: 'Primary Headquarters',
+      title: 'MB315 Project Assistance & Inquiry Location',
+      tag: 'Project Inquiry Location',
       location: 'Room MB315, 3rd Floor, Main Academic Building (MB Building)',
-      timing: 'Mon–Sat: 8:30 AM – 5:30 PM',
-      contact: '+91 (0281) 7123456 Ext 315',
-      description: 'The official centralized Lost & Found administration office for Marwadi University. All verified items, unclaimed valuables, and registration token handovers are coordinated here.',
+      timing: 'Mon–Sat: 8:30 AM – 6:00 PM',
+      contact: 'Location: MB315, Marwadi University',
+      description: 'The project-provided location for students seeking further details regarding the CampusFind prototype workflow, verification guidance, and academic inquiries.',
       image: imageAssets.college.mainBuilding,
       icon: Building2,
     },

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { 
   X, 
   MapPin, 
@@ -11,16 +11,26 @@ import {
   Building2, 
   Share2, 
   CheckCircle2,
-  AlertTriangle
+  AlertTriangle,
+  QrCode,
+  Printer,
+  Send
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
+import PrintableQRCodeModal from './PrintableQRCodeModal';
+import MarkAsFoundModal from './MarkAsFoundModal';
 
-export default function ItemDetailModal({ item, onClose }) {
-  if (!item) return null;
+export default function ItemDetailModal({ item, onClose, onUpdate }) {
+  const [currentItem, setCurrentItem] = useState(item);
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [showMarkFoundModal, setShowMarkFoundModal] = useState(false);
 
-  const isLost = item.type === 'lost';
-  const categoryIcon = imageAssets.categories[item.category] || imageAssets.placeholders.item;
-  const displayImage = item.imageUrl || categoryIcon;
+  if (!currentItem) return null;
+
+  const isLost = currentItem.type === 'lost' || currentItem.reportType === 'lost';
+  const isFoundStatus = currentItem.status === 'Found / Ready for Claim';
+  const categoryIcon = imageAssets.categories[currentItem.category] || imageAssets.placeholders.item;
+  const displayImage = currentItem.imageUrl || categoryIcon;
 
   return (
     <div className="fixed inset-0 z-50 overflow-y-auto bg-slate-900/60 backdrop-blur-sm flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-200">
@@ -32,7 +42,7 @@ export default function ItemDetailModal({ item, onClose }) {
         <div className={`px-6 py-4 flex items-center justify-between border-b ${
           isLost ? 'bg-rose-50/70 border-rose-100' : 'bg-teal-50/70 border-teal-100'
         }`}>
-          <div className="flex items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2">
             <span 
               className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wider ${
                 isLost ? 'bg-rose-600 text-white' : 'bg-teal-700 text-white'
@@ -40,8 +50,20 @@ export default function ItemDetailModal({ item, onClose }) {
             >
               {isLost ? 'Lost Report' : 'Found Report'}
             </span>
+
+            {isFoundStatus ? (
+              <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                Found &amp; Owner Notified
+              </span>
+            ) : (
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
+                {currentItem.status || 'Submitted'}
+              </span>
+            )}
+
             <span className="text-xs font-mono font-bold text-slate-800 bg-white/90 border border-slate-200 px-2.5 py-0.5 rounded-full">
-              Token: {item.token || item.id}
+              Token: {currentItem.token || currentItem.id}
             </span>
           </div>
 
@@ -54,13 +76,13 @@ export default function ItemDetailModal({ item, onClose }) {
         </div>
 
         {/* Modal body */}
-        <div className="p-6 space-y-6 max-h-[80vh] overflow-y-auto">
+        <div className="p-6 space-y-5 max-h-[75vh] overflow-y-auto">
           {/* Main Item Header */}
           <div className="flex flex-col sm:flex-row gap-4 items-start">
             <div className="w-24 h-24 rounded-2xl bg-slate-100 border border-slate-200 flex items-center justify-center p-3 shrink-0 mx-auto sm:mx-0">
               <img 
                 src={displayImage} 
-                alt={item.itemName} 
+                alt={currentItem.itemName} 
                 className="w-full h-full object-contain"
                 onError={(e) => {
                   e.currentTarget.src = imageAssets.placeholders.item;
@@ -70,20 +92,55 @@ export default function ItemDetailModal({ item, onClose }) {
 
             <div className="space-y-1.5 text-center sm:text-left flex-1">
               <h2 className="text-xl font-bold text-slate-900 leading-snug">
-                {item.itemName}
+                {currentItem.itemName}
               </h2>
               <div className="flex items-center justify-center sm:justify-start gap-2 text-xs text-slate-500">
                 <span className="bg-slate-100 px-2 py-0.5 rounded font-medium text-slate-700">
-                  {item.category || 'General Item'}
+                  {currentItem.category || 'General Item'}
                 </span>
                 <span>•</span>
-                <span>Reported on {item.date}</span>
+                <span>Reported on {currentItem.date}</span>
               </div>
               <p className="text-sm text-slate-600 pt-1 leading-relaxed">
-                {item.description}
+                {currentItem.description}
               </p>
             </div>
           </div>
+
+          {/* Found Details Banner if marked found */}
+          {currentItem.foundDetails && (
+            <div className="p-4 rounded-2xl bg-emerald-50 border border-emerald-200 text-xs space-y-2">
+              <div className="flex items-center justify-between text-emerald-900 font-bold">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                  Item Located &bull; Handover in Progress
+                </span>
+                <span className="text-[11px] bg-emerald-200/80 text-emerald-950 px-2 py-0.5 rounded-full flex items-center gap-1">
+                  <Mail className="w-3 h-3 text-emerald-700" />
+                  Email Sent
+                </span>
+              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-white/80 p-3 rounded-xl border border-emerald-100">
+                <div>
+                  <span className="text-slate-500 block">Finder:</span>
+                  <span className="font-semibold text-slate-900">{currentItem.foundDetails.finderName}</span>
+                </div>
+                <div>
+                  <span className="text-slate-500 block">Contact:</span>
+                  <span className="font-semibold text-teal-800 font-mono">{currentItem.foundDetails.finderContact}</span>
+                </div>
+                <div className="sm:col-span-2">
+                  <span className="text-slate-500 block">Current Handover Spot:</span>
+                  <span className="font-semibold text-emerald-900">{currentItem.foundDetails.foundLocation}</span>
+                </div>
+                {currentItem.foundDetails.note && (
+                  <div className="sm:col-span-2 italic text-slate-600 border-t border-emerald-100 pt-1">
+                    &quot;{currentItem.foundDetails.note}&quot;
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Location & Time details */}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
@@ -95,28 +152,28 @@ export default function ItemDetailModal({ item, onClose }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
               <div>
                 <span className="text-slate-400 block mb-0.5">Campus Zone:</span>
-                <span className="font-semibold text-slate-800">{item.location}</span>
+                <span className="font-semibold text-slate-800">{currentItem.location}</span>
               </div>
 
-              {item.specificSpot && (
+              {currentItem.specificSpot && (
                 <div>
                   <span className="text-slate-400 block mb-0.5">Exact Landmark/Spot:</span>
-                  <span className="font-semibold text-slate-800">{item.specificSpot}</span>
+                  <span className="font-semibold text-slate-800">{currentItem.specificSpot}</span>
                 </div>
               )}
 
               <div>
                 <span className="text-slate-400 block mb-0.5">Reported Date:</span>
                 <span className="font-semibold text-slate-800 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-slate-400" /> {item.date}
+                  <Calendar className="w-3.5 h-3.5 text-slate-400" /> {currentItem.date}
                 </span>
               </div>
 
-              {item.approximateTime && (
+              {currentItem.approximateTime && (
                 <div>
                   <span className="text-slate-400 block mb-0.5">Approximate Time:</span>
                   <span className="font-semibold text-slate-800 flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 text-slate-400" /> {item.approximateTime}
+                    <Clock className="w-3.5 h-3.5 text-slate-400" /> {currentItem.approximateTime}
                   </span>
                 </div>
               )}
@@ -132,12 +189,12 @@ export default function ItemDetailModal({ item, onClose }) {
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
               <div>
                 <span className="text-slate-500 block">Name:</span>
-                <span className="font-semibold text-slate-900">{item.studentName}</span>
+                <span className="font-semibold text-slate-900">{currentItem.studentName}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">Phone / Email:</span>
                 <span className="font-semibold text-teal-800 font-mono">
-                  {item.contact || item.email || 'Contact via University Helpdesk'}
+                  {currentItem.contact || currentItem.email || 'Contact via University Helpdesk'}
                 </span>
               </div>
             </div>
@@ -149,28 +206,72 @@ export default function ItemDetailModal({ item, onClose }) {
             <div>
               <p className="font-semibold mb-0.5">Verification Instructions for Marwadi Students</p>
               <p className="text-amber-800 leading-relaxed">
-                For further details, please visit <span className="font-bold underline">MB315, Marwadi University</span>. Bring your 12-digit registration token (<span className="font-mono font-bold">{item.token || item.id}</span>) and your official student ID card.
+                For further details, please visit <span className="font-bold underline">MB315, Marwadi University</span>. Bring your 12-digit registration token (<span className="font-mono font-bold">{currentItem.token || currentItem.id}</span>) and your official student ID card.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Modal footer */}
-        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-3">
-          <a
-            href={`/track?token=${item.token || item.id}`}
-            className="text-xs font-bold text-teal-700 hover:text-teal-800 underline flex items-center gap-1"
-          >
-            Track in Portal
-          </a>
-          <button
-            onClick={onClose}
-            className="px-5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors cursor-pointer"
-          >
-            Close Details
-          </button>
+        {/* Modal footer with action buttons */}
+        <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setShowQRModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <QrCode className="w-3.5 h-3.5 text-cyan-300" />
+              <span>Print Belonging QR Tag</span>
+            </button>
+
+            {isLost && !isFoundStatus && (
+              <button
+                type="button"
+                onClick={() => setShowMarkFoundModal(true)}
+                className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              >
+                <CheckCircle2 className="w-3.5 h-3.5" />
+                <span>I Found This</span>
+              </button>
+            )}
+          </div>
+
+          <div className="flex items-center gap-3">
+            <a
+              href={`/track?token=${currentItem.token || currentItem.id}`}
+              className="text-xs font-bold text-teal-700 hover:text-teal-800 underline flex items-center gap-1"
+            >
+              Track in Portal
+            </a>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 text-xs font-bold transition-colors cursor-pointer"
+            >
+              Close
+            </button>
+          </div>
         </div>
       </div>
+
+      {/* Printable QR Code Modal */}
+      {showQRModal && (
+        <PrintableQRCodeModal
+          report={currentItem}
+          onClose={() => setShowQRModal(false)}
+        />
+      )}
+
+      {/* Mark As Found Modal */}
+      {showMarkFoundModal && (
+        <MarkAsFoundModal
+          item={currentItem}
+          onClose={() => setShowMarkFoundModal(false)}
+          onSuccess={(updated) => {
+            setCurrentItem(updated);
+            if (onUpdate) onUpdate(updated);
+          }}
+        />
+      )}
     </div>
   );
 }

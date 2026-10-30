@@ -257,6 +257,10 @@ export default function BrowseItemsPage() {
         <ItemDetailModal
           item={activeModalItem}
           onClose={() => setActiveModalItem(null)}
+          onUpdate={(updated) => {
+            setItems(getStoredReports());
+            setActiveModalItem(updated);
+          }}
         />
       )}
     </div>
