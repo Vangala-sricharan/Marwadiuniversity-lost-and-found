@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <rect width="100" height="100" rx="24" fill="#F0F9FF"/>
+  <!-- Open Book -->
+  <path d="M50 34C44 30 34 30 24 33V68C34 65 44 65 50 69C56 65 66 65 76 68V33C66 30 56 30 50 34Z" fill="#FFFFFF" stroke="#0284C7" stroke-width="2.5" stroke-linejoin="round"/>
+  <path d="M50 34V69" stroke="#0284C7" stroke-width="2.5" stroke-linecap="round"/>
+  <path d="M30 42H44M30 50H42M58 42H70M58 50H68" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+</svg>

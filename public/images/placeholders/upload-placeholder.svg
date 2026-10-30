@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 160" fill="none">
+  <rect width="200" height="160" rx="16" fill="#F8FAFC"/>
+  <rect x="2" y="2" width="196" height="156" rx="14" stroke="#0D9488" stroke-width="1.8" stroke-dasharray="6 6" fill="#F0FDFA"/>
+  <circle cx="100" cy="62" r="26" fill="#CCFBF1"/>
+  <path d="M100 48V76M100 48L90 58M100 48L110 58" stroke="#0D9488" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="100" y="104" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" font-weight="600" fill="#0F172A">Click to upload photo</text>
+  <text x="100" y="122" text-anchor="middle" font-family="system-ui, sans-serif" font-size="11" fill="#64748B">JPEG, PNG or WEBP (Max 5MB)</text>
+</svg>

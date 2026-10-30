@@ -1,0 +1,6 @@
+{
+  "name": "CampusFind — Marwadi University Lost & Found",
+  "description": "Official Lost & Found portal for Marwadi University students and staff to report, track, and recover misplaced belongings across campus.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
