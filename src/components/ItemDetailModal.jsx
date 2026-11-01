@@ -122,15 +122,15 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-[11px] bg-white/80 p-3 rounded-xl border border-emerald-100">
                 <div>
-                  <span className="text-slate-500 block">Finder:</span>
-                  <span className="font-semibold text-slate-900">{currentItem.foundDetails.finderName}</span>
+                  <span className="text-slate-500 block">Status:</span>
+                  <span className="font-semibold text-emerald-900">Marked as Found by Fellow Student</span>
                 </div>
                 <div>
-                  <span className="text-slate-500 block">Contact:</span>
-                  <span className="font-semibold text-teal-800 font-mono">{currentItem.foundDetails.finderContact}</span>
+                  <span className="text-slate-500 block">Verification:</span>
+                  <span className="font-semibold text-teal-800">Protected Handover</span>
                 </div>
                 <div className="sm:col-span-2">
-                  <span className="text-slate-500 block">Current Handover Spot:</span>
+                  <span className="text-slate-500 block">Handover / Holding Spot:</span>
                   <span className="font-semibold text-emerald-900">{currentItem.foundDetails.foundLocation}</span>
                 </div>
                 {currentItem.foundDetails.note && (
@@ -180,24 +180,15 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
             </div>
           </div>
 
-          {/* Reporter & Contact info */}
-          <div className="bg-blue-50/50 rounded-2xl p-4 border border-blue-100 space-y-2">
-            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-600 flex items-center gap-1.5">
-              <User className="w-4 h-4 text-teal-600" />
-              Student Contact Information
+          {/* Student Privacy Protected Card (No private phone or email exposed publicly) */}
+          <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/90 space-y-1.5">
+            <h4 className="text-xs font-bold uppercase tracking-wider text-slate-700 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-teal-600" />
+              Student Privacy Protection
             </h4>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 text-xs pt-1">
-              <div>
-                <span className="text-slate-500 block">Name:</span>
-                <span className="font-semibold text-slate-900">{currentItem.studentName}</span>
-              </div>
-              <div>
-                <span className="text-slate-500 block">Phone / Email:</span>
-                <span className="font-semibold text-teal-800 font-mono">
-                  {currentItem.contact || currentItem.email || 'Contact via University Helpdesk'}
-                </span>
-              </div>
-            </div>
+            <p className="text-xs text-slate-600 leading-relaxed">
+              Personal contact details (phone numbers and emails) are strictly protected and never displayed in public listings. To claim this belonging or get in touch regarding this report, please visit <strong className="text-slate-900">MB315, Marwadi University</strong>, or use your 12-digit registration token in the Track Report portal.
+            </p>
           </div>
 
           {/* Recovery / Claim Advice Notice */}

@@ -11,16 +11,49 @@ import {
   Check, 
   ArrowRight,
   QrCode,
-  Printer,
   CheckCircle2,
   Mail,
-  Send
+  ShieldCheck,
+  FileText,
+  Archive,
+  Info,
+  Calendar,
+  Sparkles,
+  ChevronRight
 } from 'lucide-react';
-import { getReportByToken } from '../services/storage';
+import { getReportByToken, updateReportStatus } from '../services/storage';
 import { isValidTokenFormat } from '../utils/tokenGenerator';
 import { imageAssets } from '../config/imageAssets';
 import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
 import MarkAsFoundModal from '../components/MarkAsFoundModal';
+
+// 4-stage lifecycle timeline definition
+const TIMELINE_STAGES = [
+  {
+    key: 'Submitted',
+    label: 'Submitted',
+    shortDesc: 'Report logged in portal',
+    icon: FileText,
+  },
+  {
+    key: 'Under Verification',
+    label: 'Under Verification',
+    shortDesc: 'Desk check at MB315',
+    icon: ShieldCheck,
+  },
+  {
+    key: 'Recovered',
+    label: 'Recovered',
+    shortDesc: 'Matched & ready for pickup',
+    icon: CheckCircle2,
+  },
+  {
+    key: 'Closed',
+    label: 'Closed',
+    shortDesc: 'Handover complete',
+    icon: Archive,
+  },
+];
 
 export default function TrackReportPage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -33,6 +66,7 @@ export default function TrackReportPage() {
   const [validationError, setValidationError] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [showMarkFoundModal, setShowMarkFoundModal] = useState(false);
+  const [demoNotice, setDemoNotice] = useState('');
 
   // Auto-search if token is present in URL
   useEffect(() => {
@@ -45,6 +79,7 @@ export default function TrackReportPage() {
   const executeSearch = (tokenToSearch) => {
     const clean = tokenToSearch.trim();
     setValidationError('');
+    setDemoNotice('');
 
     if (!clean) {
       setValidationError('Please enter your 12-digit registration token.');
@@ -78,12 +113,54 @@ export default function TrackReportPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handleStageDemoChange = (newStage) => {
+    if (!report?.token) return;
+    try {
+      const updated = updateReportStatus(
+        report.token, 
+        newStage, 
+        `Demonstration update: stage moved to ${newStage} in browser storage.`
+      );
+      setReport(updated);
+      setDemoNotice(`Timeline stage updated to "${newStage}" for prototype evaluation.`);
+      setTimeout(() => setDemoNotice(''), 3500);
+    } catch (err) {
+      console.error('Failed to change stage:', err);
+    }
+  };
+
   const isLost = report && (report.reportType === 'lost' || report.type === 'lost');
   const categoryIcon = report ? (imageAssets.categories[report.category] || imageAssets.placeholders.item) : null;
 
+  // Mask sensitive contact details to prevent shoulder-surfing/accidental exposure
+  const maskContact = (contact) => {
+    if (!contact) return 'Protected on file';
+    if (contact.includes('@')) {
+      const parts = contact.split('@');
+      const user = parts[0];
+      const domain = parts[1] || 'marwadiuniversity.ac.in';
+      const visible = user.length > 2 ? user.slice(0, 2) : user.slice(0, 1);
+      return `${visible}***@${domain}`;
+    }
+    const digits = contact.replace(/\D/g, '');
+    if (digits.length >= 10) {
+      return `+91 ${digits.slice(0, 2)}*** ***${digits.slice(-2)}`;
+    }
+    return `${contact.slice(0, 2)}***${contact.slice(-2)}`;
+  };
+
+  // Determine numeric index of current status in timeline
+  const getCurrentStageIndex = (status) => {
+    const norm = status || 'Submitted';
+    const idx = TIMELINE_STAGES.findIndex(s => s.key.toLowerCase() === norm.toLowerCase());
+    return idx >= 0 ? idx : 0;
+  };
+
+  const currentStageIdx = report ? getCurrentStageIndex(report.status) : 0;
+
   return (
     <div className="min-h-screen bg-slate-50 py-12">
-      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
         
         {/* Page Banner Header */}
         <div className="text-center max-w-xl mx-auto mb-10">
@@ -95,7 +172,7 @@ export default function TrackReportPage() {
             Track Your Report
           </h1>
           <p className="mt-2.5 text-slate-600 text-sm sm:text-base leading-relaxed">
-            Enter your 12-digit registration token to verify your submission details and real-time status.
+            Enter your 12-digit registration token to verify your submission details, view physical recovery directions, and monitor the 4-stage status timeline.
           </p>
         </div>
 
@@ -116,7 +193,6 @@ export default function TrackReportPage() {
                   id="tokenInput"
                   value={inputToken}
                   onChange={(e) => {
-                    // Filter to numeric only, max 12 chars
                     const numeric = e.target.value.replace(/\D/g, '').slice(0, 12);
                     setInputToken(numeric);
                     if (validationError) setValidationError('');
@@ -196,7 +272,7 @@ export default function TrackReportPage() {
               </div>
             ) : (
               /* Found Report Tracking Details */
-              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden animate-in fade-in duration-200">
+              <div className="bg-white rounded-3xl border border-slate-200/90 shadow-xl overflow-hidden animate-in fade-in duration-200 space-y-0">
                 
                 {/* Header status bar */}
                 <div className={`p-6 sm:p-8 border-b ${
@@ -218,32 +294,189 @@ export default function TrackReportPage() {
                           type="button"
                           onClick={handleCopy}
                           title="Copy Token"
-                          className="text-slate-400 hover:text-slate-700 ml-1"
+                          className="text-slate-400 hover:text-slate-700 ml-1 cursor-pointer"
                         >
                           {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5" />}
                         </button>
                       </div>
                     </div>
 
-                    {/* Current Report Status */}
+                    {/* Current Status Badge */}
                     <div className="flex items-center gap-2">
-                      <span className="text-xs text-slate-500 uppercase font-semibold">Current Status:</span>
-                      {report.status === 'Found / Ready for Claim' ? (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-bold uppercase tracking-wider">
-                          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                          Found / Ready for Claim
-                        </span>
-                      ) : (
-                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-xl bg-blue-50 text-blue-800 border border-blue-200 text-xs font-bold uppercase tracking-wider">
-                          <span className="w-2 h-2 rounded-full bg-blue-500 animate-pulse"></span>
-                          {report.status || 'Submitted'}
-                        </span>
-                      )}
+                      <span className="text-xs text-slate-500 uppercase font-semibold">Current Stage:</span>
+                      <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider ${
+                        report.status === 'Recovered' 
+                          ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
+                          : report.status === 'Under Verification'
+                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                            : report.status === 'Closed'
+                              ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                              : 'bg-blue-100 text-blue-800 border border-blue-200'
+                      }`}>
+                        <span className={`w-2 h-2 rounded-full ${
+                          report.status === 'Recovered'
+                            ? 'bg-emerald-500'
+                            : report.status === 'Under Verification'
+                              ? 'bg-amber-500 animate-pulse'
+                              : report.status === 'Closed'
+                                ? 'bg-slate-500'
+                                : 'bg-blue-500 animate-pulse'
+                        }`}></span>
+                        {report.status || 'Submitted'}
+                      </span>
                     </div>
                   </div>
                 </div>
 
-                {/* Body Details */}
+                {/* 4-STAGE REPORT STATUS TIMELINE (FEATURE TWO) */}
+                <div className="p-6 sm:p-8 bg-slate-50/70 border-b border-slate-200/80">
+                  <div className="flex items-center justify-between mb-6">
+                    <div>
+                      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-800 flex items-center gap-2">
+                        <Clock className="w-4 h-4 text-teal-600" />
+                        Report Status Lifecycle Timeline
+                      </h3>
+                      <p className="text-xs text-slate-500 mt-0.5">
+                        4-stage campus verification and custody pipeline
+                      </p>
+                    </div>
+                    <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-lg">
+                      Stage {currentStageIdx + 1} of 4
+                    </span>
+                  </div>
+
+                  {/* Visual Stepper Bar */}
+                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 relative">
+                    {TIMELINE_STAGES.map((stage, idx) => {
+                      const StageIcon = stage.icon;
+                      const isCompleted = idx < currentStageIdx;
+                      const isCurrent = idx === currentStageIdx;
+                      const isPending = idx > currentStageIdx;
+
+                      return (
+                        <div 
+                          key={stage.key}
+                          className={`relative p-4 rounded-2xl border transition-all ${
+                            isCurrent
+                              ? 'bg-white border-teal-500 shadow-md ring-2 ring-teal-500/20'
+                              : isCompleted
+                                ? 'bg-teal-50/40 border-teal-200/90'
+                                : 'bg-white/60 border-slate-200 opacity-70'
+                          }`}
+                        >
+                          <div className="flex items-center justify-between mb-2">
+                            <span className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold ${
+                              isCompleted
+                                ? 'bg-teal-600 text-white'
+                                : isCurrent
+                                  ? 'bg-[#0F2347] text-white ring-2 ring-teal-400'
+                                  : 'bg-slate-200 text-slate-600'
+                            }`}>
+                              {isCompleted ? <Check className="w-4 h-4" /> : idx + 1}
+                            </span>
+
+                            <StageIcon className={`w-4 h-4 ${
+                              isCurrent ? 'text-teal-600' : isCompleted ? 'text-teal-700' : 'text-slate-400'
+                            }`} />
+                          </div>
+
+                          <h4 className={`text-xs font-bold leading-tight ${
+                            isCurrent ? 'text-slate-900 font-extrabold' : 'text-slate-700'
+                          }`}>
+                            {stage.label}
+                          </h4>
+
+                          <p className="text-[11px] text-slate-500 mt-1 leading-snug">
+                            {stage.shortDesc}
+                          </p>
+
+                          {isCurrent && (
+                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-teal-600 text-white">
+                              Active Stage
+                            </span>
+                          )}
+                          {isCompleted && (
+                            <span className="inline-block mt-2 px-2 py-0.5 rounded text-[9px] font-bold uppercase tracking-wider bg-teal-100 text-teal-800">
+                              Completed
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                  </div>
+
+                  {/* Stage Audit History Feed */}
+                  {report.history && report.history.length > 0 && (
+                    <div className="mt-5 bg-white p-4 rounded-2xl border border-slate-200 text-xs space-y-2">
+                      <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block mb-1">
+                        Timeline Audit Trail
+                      </span>
+                      {report.history.map((h, i) => (
+                        <div key={i} className="flex items-start gap-2.5 py-1 border-b border-slate-100 last:border-b-0">
+                          <span className="w-2 h-2 rounded-full bg-teal-500 mt-1.5 shrink-0"></span>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center justify-between gap-2">
+                              <span className="font-bold text-slate-800">{h.stage}</span>
+                              <span className="text-[10px] text-slate-400 font-mono">
+                                {new Date(h.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                              </span>
+                            </div>
+                            <p className="text-slate-600 text-[11px] mt-0.5">{h.note}</p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Honest LocalStorage Prototype Notice */}
+                  <div className="mt-5 bg-blue-50/80 border border-blue-200/90 rounded-2xl p-4 text-xs text-blue-950 flex items-start gap-3">
+                    <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+                    <div className="space-y-1">
+                      <p className="font-bold text-blue-900">
+                        Browser LocalStorage Prototype Architecture
+                      </p>
+                      <p className="leading-relaxed text-blue-800 text-[11px]">
+                        CampusFind operates as an independent client-side prototype. Reports remain in &ldquo;Submitted&rdquo; status in your local browser session unless updated. No automated background cloud sync or fabricated administrative actions occur.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Prototype Demonstration Switcher (For Evaluation Testing) */}
+                  <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-3">
+                      <div className="flex items-center gap-1.5 text-xs font-bold text-slate-800">
+                        <Sparkles className="w-3.5 h-3.5 text-teal-600" />
+                        <span>Interactive Prototype Demonstration: Test Stage Transitions</span>
+                      </div>
+                      {demoNotice && (
+                        <span className="text-[11px] text-emerald-700 font-semibold bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 animate-in fade-in">
+                          {demoNotice}
+                        </span>
+                      )}
+                    </div>
+                    
+                    <div className="flex flex-wrap gap-2">
+                      {TIMELINE_STAGES.map((s) => (
+                        <button
+                          key={s.key}
+                          type="button"
+                          onClick={() => handleStageDemoChange(s.key)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
+                            report.status === s.key
+                              ? 'bg-teal-700 text-white shadow-sm ring-2 ring-teal-500/30'
+                              : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                          }`}
+                        >
+                          <span>{s.label}</span>
+                          {report.status === s.key && <Check className="w-3.5 h-3.5 text-white" />}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                </div>
+
+                {/* Body Details & Required Fields */}
                 <div className="p-6 sm:p-8 space-y-6">
                   
                   {/* Item Headline */}
@@ -300,11 +533,11 @@ export default function TrackReportPage() {
 
                     <div>
                       <span className="text-slate-400 uppercase tracking-wider font-bold block mb-1">
-                        Student Contact
+                        Student Contact (Protected)
                       </span>
-                      <span className="text-sm font-semibold text-slate-900 flex items-center gap-1.5">
+                      <span className="text-sm font-semibold text-slate-900 flex items-center gap-1.5 font-mono">
                         <Phone className="w-4 h-4 text-slate-500 shrink-0" />
-                        {report.contact}
+                        {maskContact(report.contact)}
                       </span>
                     </div>
 
@@ -338,8 +571,8 @@ export default function TrackReportPage() {
                           <span className="font-semibold text-slate-900">{report.foundDetails.finderName}</span>
                         </div>
                         <div>
-                          <span className="text-slate-500 block mb-0.5">Finder Contact:</span>
-                          <span className="font-semibold text-teal-800 font-mono">{report.foundDetails.finderContact}</span>
+                          <span className="text-slate-500 block mb-0.5">Finder Contact (Protected):</span>
+                          <span className="font-semibold text-teal-800 font-mono">{maskContact(report.foundDetails.finderContact)}</span>
                         </div>
                         <div className="sm:col-span-2">
                           <span className="text-slate-500 block mb-0.5">Handover / Holding Location:</span>
@@ -380,14 +613,14 @@ export default function TrackReportPage() {
                       <span>Print Belonging QR Tag</span>
                     </button>
 
-                    {isLost && report.status !== 'Found / Ready for Claim' && (
+                    {isLost && report.status !== 'Recovered' && report.status !== 'Closed' && (
                       <button
                         type="button"
                         onClick={() => setShowMarkFoundModal(true)}
                         className="px-5 py-2.5 rounded-xl bg-teal-600 hover:bg-teal-500 text-white font-bold text-xs uppercase tracking-wider flex items-center justify-center gap-2 shadow-sm transition-all cursor-pointer"
                       >
                         <CheckCircle2 className="w-4 h-4 text-white" />
-                        <span>I Found This Item (Mark Found &amp; Notify)</span>
+                        <span>I Found This Item (Mark Recovered &amp; Notify)</span>
                       </button>
                     )}
                   </div>
@@ -397,7 +630,7 @@ export default function TrackReportPage() {
                 {/* Footer action */}
                 <div className="bg-slate-50 px-6 sm:px-8 py-4 border-t border-slate-200 flex items-center justify-between">
                   <span className="text-xs text-slate-500">
-                    CampusFind Marwadi University
+                    CampusFind Marwadi University &bull; Location: MB315
                   </span>
                   <Link
                     to="/browse"

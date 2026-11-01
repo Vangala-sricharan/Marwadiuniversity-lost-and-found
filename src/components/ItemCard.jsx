@@ -91,11 +91,11 @@ export default function ItemCard({ item, onSelect }) {
         </div>
       </div>
 
-      {/* Card Footer / Quick Action bar */}
+      {/* Card Footer / Quick Action bar (No private contact or personal details) */}
       <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
-        <span className="text-slate-500 flex items-center gap-1 font-medium">
-          <User className="w-3.5 h-3.5 text-slate-400" />
-          {item.studentName.split(' ')[0]}
+        <span className="text-slate-500 flex items-center gap-1.5 font-medium text-[11px]">
+          <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />
+          Marwadi Campus
         </span>
 
         <span className="text-teal-700 font-semibold group-hover:translate-x-0.5 transition-transform flex items-center gap-1">

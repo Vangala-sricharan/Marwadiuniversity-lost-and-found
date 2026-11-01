@@ -12,6 +12,9 @@ import {
   Sparkles
 } from 'lucide-react';
 
+// Official deployed Vercel domain for QR recovery links
+export const DEPLOYED_RECOVERY_DOMAIN = 'https://marwadiuniversity-lost-and-found.vercel.app';
+
 export default function PrintableQRCodeModal({ report, onClose }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copied, setCopied] = useState(false);
@@ -20,8 +23,9 @@ export default function PrintableQRCodeModal({ report, onClose }) {
   if (!report) return null;
 
   const token = report.token || report.id;
-  const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
-  const trackingUrl = `${baseUrl}/track?token=${token}`;
+  // QR code encodes the deployed Vercel domain recovery URL (per Phase 1 requirements)
+  const recoveryUrl = `${DEPLOYED_RECOVERY_DOMAIN}/recover/${token}`;
+  const localTestUrl = `/recover/${token}`;
 
   // Keyboard accessibility: Escape key closes the modal
   useEffect(() => {
@@ -34,10 +38,10 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [onClose]);
 
-  // Generate crisp QR code
+  // Generate crisp QR code strictly encoding the safe deployed recovery URL
   useEffect(() => {
     QRCode.toDataURL(
-      trackingUrl,
+      recoveryUrl,
       {
         width: 320,
         margin: 2,
@@ -55,7 +59,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
         }
       }
     );
-  }, [trackingUrl]);
+  }, [recoveryUrl]);
 
   const handlePrint = () => {
     window.print();
@@ -65,14 +69,14 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     if (!qrDataUrl) return;
     const a = document.createElement('a');
     a.href = qrDataUrl;
-    a.download = `CampusFind-QR-Token-${token}.png`;
+    a.download = `CampusFind-QR-Recovery-${token}.png`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
   };
 
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(trackingUrl);
+    navigator.clipboard.writeText(recoveryUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -86,69 +90,190 @@ export default function PrintableQRCodeModal({ report, onClose }) {
 
   return (
     <div 
-      className="fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6 animate-in fade-in duration-200"
+      className="qr-modal-backdrop fixed inset-0 z-50 overflow-y-auto bg-slate-950/80 backdrop-blur-sm flex items-center justify-center p-3 sm:p-6"
       onClick={handleBackdropClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby="qr-modal-title"
     >
-      {/* Print-specific style override: prints ONLY the horizontal badge */}
+      {/* Print-specific style override & smooth UI keyframes */}
       <style>{`
+        /* Smooth fade-in animation for modal */
+        .qr-modal-backdrop {
+          animation: qrModalFadeIn 280ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+        .qr-modal-card {
+          animation: qrModalPopIn 320ms cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+
+        /* Subtle scale-up effect on the QR code element */
+        .qr-code-box {
+          animation: qrCodeScaleIn 380ms cubic-bezier(0.34, 1.56, 0.64, 1) 90ms both;
+          transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 300ms ease;
+        }
+        .qr-code-box:hover {
+          transform: scale(1.04);
+        }
+
+        @keyframes qrModalFadeIn {
+          0% {
+            opacity: 0;
+            backdrop-filter: blur(0px);
+          }
+          100% {
+            opacity: 1;
+            backdrop-filter: blur(4px);
+          }
+        }
+
+        @keyframes qrModalPopIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.95) translateY(10px);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+          }
+        }
+
+        @keyframes qrCodeScaleIn {
+          0% {
+            opacity: 0;
+            transform: scale(0.88);
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+          }
+        }
+
+        /* Dedicated @media print CSS rules */
         @media print {
+          html, body {
+            background: transparent !important;
+            background-color: transparent !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+          }
+
+          /* Hide all default page content */
           body * {
             visibility: hidden !important;
           }
-          #printable-tag-area, #printable-tag-area * {
+
+          /* Hide modal background / overlay completely */
+          .qr-modal-backdrop,
+          div[role="dialog"] {
+            background: transparent !important;
+            background-color: transparent !important;
+            backdrop-filter: none !important;
+            -webkit-backdrop-filter: none !important;
+            position: static !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            display: block !important;
+            animation: none !important;
+          }
+
+          /* Strip modal card borders & shadows for clean print */
+          .qr-modal-card {
+            box-shadow: none !important;
+            border: none !important;
+            border-radius: 0 !important;
+            max-width: 100% !important;
+            width: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            background: transparent !important;
+            transform: none !important;
+            animation: none !important;
+          }
+
+          /* Remove close button, modal header bar, action buttons, and links */
+          .modal-header-chrome,
+          .print-hide,
+          button,
+          a {
+            display: none !important;
+            visibility: hidden !important;
+            height: 0 !important;
+            width: 0 !important;
+            overflow: hidden !important;
+          }
+
+          /* Ensure the badge layout is centered and full-width on printed pages */
+          #printable-tag-area,
+          #printable-tag-area * {
             visibility: visible !important;
           }
+
           #printable-tag-area {
-            position: fixed !important;
-            left: 50% !important;
-            top: 30px !important;
-            transform: translateX(-50%) !important;
-            width: 680px !important;
-            max-width: 95vw !important;
+            position: relative !important;
+            left: auto !important;
+            top: auto !important;
+            transform: none !important;
             display: block !important;
-            border: 2px dashed #0F2347 !important;
+            width: 100% !important;
+            max-width: 100% !important;
+            margin: 0 auto !important;
             padding: 24px !important;
+            box-sizing: border-box !important;
             background: #ffffff !important;
-            box-shadow: none !important;
+            border: 2px dashed #0F2347 !important;
             border-radius: 18px !important;
+            box-shadow: none !important;
             page-break-inside: avoid !important;
+            page-break-before: avoid !important;
+            page-break-after: avoid !important;
           }
-          #printable-tag-area .print-hide {
-            display: none !important;
-          }
+
           #printable-tag-area .tag-inner-layout {
             display: flex !important;
             flex-direction: row !important;
             align-items: stretch !important;
-            gap: 24px !important;
+            gap: 28px !important;
+            width: 100% !important;
+            background: #ffffff !important;
+            border: 1px solid #cbd5e1 !important;
+            box-shadow: none !important;
           }
+
           #printable-tag-area .tag-qr-col {
             width: 250px !important;
+            max-width: 250px !important;
             flex-shrink: 0 !important;
             display: flex !important;
             flex-direction: column !important;
             align-items: center !important;
             justify-content: center !important;
           }
+
           #printable-tag-area .tag-details-col {
-            flex: 1 !important;
+            flex: 1 1 auto !important;
+            width: auto !important;
             display: flex !important;
             flex-direction: column !important;
             justify-content: space-between !important;
+          }
+
+          #printable-tag-area .qr-code-box {
+            transform: none !important;
+            box-shadow: none !important;
+            animation: none !important;
           }
         }
       `}</style>
 
       {/* Main Modal Card */}
       <div 
-        className="bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto animate-in zoom-in-95 duration-200"
+        className="qr-modal-card bg-white rounded-3xl max-w-2xl sm:max-w-3xl w-full shadow-2xl border border-slate-200 overflow-hidden relative my-auto"
         onClick={(e) => e.stopPropagation()}
       >
-        {/* Modal Header with Prominent Close Button */}
-        <div className="bg-[#0F2347] text-white px-5 sm:px-6 py-4 flex items-center justify-between border-b border-slate-800">
+        {/* Modal Header with Prominent Close Button (Hidden on Print) */}
+        <div className="modal-header-chrome bg-[#0F2347] text-white px-5 sm:px-6 py-4 flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-3">
             <span className="p-2 rounded-xl bg-cyan-500/20 text-cyan-300 border border-cyan-500/30">
               <QrCode className="w-5 h-5 text-cyan-400" />
@@ -169,7 +294,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
             onClick={onClose}
             aria-label="Close QR badge preview"
             title="Close (Esc)"
-            className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-[#0F2347] cursor-pointer"
+            className="print-hide w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white flex items-center justify-center transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2 focus:ring-offset-[#0F2347] cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -178,14 +303,14 @@ export default function PrintableQRCodeModal({ report, onClose }) {
         {/* Modal Body */}
         <div className="p-5 sm:p-7 space-y-5 max-h-[82vh] overflow-y-auto">
           
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="print-hide flex items-center justify-between text-xs text-slate-500">
             <span>Identification Tag Preview</span>
             <span className="hidden sm:inline-flex items-center gap-1 text-teal-700 font-semibold">
               <Sparkles className="w-3.5 h-3.5" /> Ready to print or download
             </span>
           </div>
 
-          {/* Printable Tag Container (Two-column on desktop, stacked on mobile) */}
+          {/* Printable Tag Container (Centered and full-width on print) */}
           <div 
             id="printable-tag-area"
             ref={printRef}
@@ -205,12 +330,12 @@ export default function PrintableQRCodeModal({ report, onClose }) {
               
               {/* LEFT COLUMN: Large, Clearly Scannable QR Code */}
               <div className="tag-qr-col w-full sm:w-[250px] shrink-0 flex flex-col items-center justify-center">
-                <div className="w-56 h-56 sm:w-60 sm:h-60 bg-white p-3.5 rounded-2xl border border-slate-200 flex items-center justify-center shadow-inner">
+                <div className="qr-code-box group w-56 h-56 sm:w-60 sm:h-60 bg-white p-3.5 rounded-2xl border border-slate-200 flex items-center justify-center shadow-inner hover:shadow-md cursor-pointer">
                   {qrDataUrl ? (
                     <img 
                       src={qrDataUrl} 
                       alt={`QR Code for ${report.itemName}`}
-                      className="w-full h-full object-contain"
+                      className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-xs text-slate-400 gap-2">
@@ -274,11 +399,11 @@ export default function PrintableQRCodeModal({ report, onClose }) {
                   </div>
                 </div>
 
-                {/* Short Return Instruction */}
+                {/* Exact Required Return Instruction */}
                 <div className="bg-amber-50/90 border border-amber-200/90 rounded-2xl p-3.5 text-xs text-amber-950 flex items-start gap-2.5">
                   <Building2 className="w-4 h-4 text-amber-700 shrink-0 mt-0.5" />
                   <p className="leading-relaxed">
-                    If found, please scan this QR code or return it to <strong className="font-bold text-amber-900">MB315, Marwadi University</strong>.
+                    If found, please scan this QR code or visit <strong className="font-bold text-amber-900">MB315, Marwadi University</strong>, for further assistance.
                   </p>
                 </div>
 
@@ -288,24 +413,38 @@ export default function PrintableQRCodeModal({ report, onClose }) {
 
           </div>
 
-          {/* Direct Link Row */}
-          <div className="flex items-center gap-2 p-2.5 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
-            <span className="text-slate-400 font-medium shrink-0 pl-1">QR Link:</span>
-            <span className="text-[11px] font-mono truncate flex-1 text-slate-700">
-              {trackingUrl}
-            </span>
-            <button
-              type="button"
-              onClick={handleCopyLink}
-              className="px-3 py-1.5 rounded-xl bg-white border border-slate-300 text-slate-700 font-bold hover:bg-slate-100 transition-colors shrink-0 flex items-center gap-1.5 text-xs cursor-pointer shadow-2xs"
-            >
-              {copied ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
-              <span>{copied ? 'Copied' : 'Copy URL'}</span>
-            </button>
+          {/* Direct Safe Recovery Link Row (Hidden on Print) */}
+          <div className="print-hide flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-2 p-3 rounded-2xl bg-slate-50 border border-slate-200 text-xs text-slate-600">
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className="text-slate-400 font-medium shrink-0 pl-1">Recovery Link:</span>
+              <span className="text-[11px] font-mono truncate text-teal-800 font-semibold select-all" title={recoveryUrl}>
+                {recoveryUrl}
+              </span>
+            </div>
+            <div className="flex items-center gap-2 shrink-0">
+              <a
+                href={localTestUrl}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="px-2.5 py-1.5 rounded-xl bg-white border border-slate-200 text-slate-600 font-semibold hover:text-teal-700 hover:border-teal-300 transition-colors text-[11px] flex items-center gap-1"
+                title="Preview recovery page in current app"
+              >
+                <span>Test Page</span>
+                <span className="text-[10px]">&nearr;</span>
+              </a>
+              <button
+                type="button"
+                onClick={handleCopyLink}
+                className="px-3 py-1.5 rounded-xl bg-teal-600 hover:bg-teal-700 text-white font-bold transition-colors flex items-center gap-1.5 text-xs cursor-pointer shadow-2xs"
+              >
+                {copied ? <Check className="w-3.5 h-3.5 text-white" /> : <Copy className="w-3.5 h-3.5 text-teal-200" />}
+                <span>{copied ? 'Copied' : 'Copy Vercel URL'}</span>
+              </button>
+            </div>
           </div>
 
-          {/* Action Buttons: Download PNG, Print, Close */}
-          <div className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
+          {/* Action Buttons: Download PNG, Print, Close (Hidden on Print) */}
+          <div className="print-hide flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 pt-3 border-t border-slate-100">
             <button
               type="button"
               onClick={handleDownload}
@@ -340,3 +479,4 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     </div>
   );
 }
+

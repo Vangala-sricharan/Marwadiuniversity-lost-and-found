@@ -9,9 +9,13 @@ import {
   AlertCircle,
   HelpCircle,
   FileText,
-  Building2
+  Building2,
+  Lock,
+  Cookie,
+  MessageSquare
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
+import { openCookieModal } from '../services/consentService';
 
 export default function Footer() {
   return (
@@ -21,14 +25,14 @@ export default function Footer() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-5 items-center">
             
-            {/* MB315 Inquiries & Demonstration Post */}
+            {/* MB315 Further Assistance */}
             <div className="flex items-center gap-3.5">
               <div className="w-10 h-10 rounded-xl bg-teal-500/10 border border-teal-500/20 flex items-center justify-center text-teal-400 shrink-0">
                 <Building2 className="w-5 h-5" />
               </div>
               <div>
-                <p className="text-[11px] uppercase tracking-wider text-teal-400 font-bold">Project Assistance Location</p>
-                <p className="text-sm font-semibold text-white">Location: MB315, Marwadi University</p>
+                <p className="text-[11px] uppercase tracking-wider text-teal-400 font-bold">Project Demonstration Desk</p>
+                <p className="text-sm font-semibold text-white">Further Assistance: MB315</p>
               </div>
             </div>
 
@@ -39,7 +43,7 @@ export default function Footer() {
               </div>
               <div>
                 <p className="text-[11px] uppercase tracking-wider text-slate-400 font-bold">Hours of Assistance</p>
-                <p className="text-sm font-semibold text-white">Mon–Sat 8:30 AM – 6:00 PM</p>
+                <p className="text-sm font-semibold text-white">Monday – Saturday | 8:30 AM – 6:00 PM</p>
               </div>
             </div>
 
@@ -122,6 +126,11 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/help" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
+                  Help Center
+                </Link>
+              </li>
+              <li>
                 <Link to="/faq" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
                   FAQs
                 </Link>
@@ -129,6 +138,16 @@ export default function Footer() {
               <li>
                 <Link to="/terms" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
                   Terms &amp; Conditions
+                </Link>
+              </li>
+              <li>
+                <Link to="/privacy" className="text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  Privacy Policy
+                </Link>
+              </li>
+              <li>
+                <Link to="/feedback" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
+                  Student Feedback
                 </Link>
               </li>
             </ul>
@@ -159,6 +178,11 @@ export default function Footer() {
                 </a>
               </li>
               <li>
+                <a href="/#campus-gallery" className="text-slate-400 hover:text-white transition-colors">
+                  Campus Photo Gallery (30+)
+                </a>
+              </li>
+              <li className="pt-1">
                 <Link to="/campus-guide" className="text-teal-400 hover:text-teal-300 transition-colors font-medium">
                   Collection Desks Guide &rarr;
                 </Link>
@@ -172,7 +196,7 @@ export default function Footer() {
             <ul className="space-y-3 text-xs text-slate-400">
               <li className="flex items-start gap-2.5">
                 <Building2 className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
-                <span><strong className="text-white">Location: MB315</strong>, Marwadi University (Project queries)</span>
+                <span><strong className="text-white">Further Assistance: MB315</strong>, Marwadi University</span>
               </li>
               <li className="flex items-start gap-2.5">
                 <MapPin className="w-4 h-4 text-teal-400 shrink-0 mt-0.5" />
@@ -180,9 +204,20 @@ export default function Footer() {
               </li>
               <li className="flex items-center gap-2.5">
                 <Clock className="w-4 h-4 text-cyan-400 shrink-0" />
-                <span>Mon–Sat 8:30 AM – 6:00 PM</span>
+                <span>Monday – Saturday | 8:30 AM – 6:00 PM</span>
               </li>
             </ul>
+
+            <div className="mt-5 pt-4 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={openCookieModal}
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+              >
+                <Cookie className="w-3.5 h-3.5 text-teal-400" />
+                <span>Cookie Settings</span>
+              </button>
+            </div>
           </div>
 
         </div>
@@ -193,25 +228,41 @@ export default function Footer() {
             <span className="font-bold text-amber-400 block sm:inline sm:mr-2 uppercase tracking-wider text-xs">
               Prototype Disclaimer:
             </span>
-            CampusFind is an independent student-developed prototype created for academic demonstration purposes. It is not an official Marwadi University website or an officially approved university service.
+            CampusFind is an independent student-developed Lost &amp; Found prototype created for demonstration purposes. It is not an official Marwadi University website or university-authorized service.
           </div>
 
           <div className="mt-5 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400 max-w-4xl mx-auto text-center sm:text-left">
             <div>
               &copy; 2026 CampusFind – Student Project. All rights reserved.
             </div>
-            <div className="flex items-center justify-center gap-4 text-slate-400 flex-wrap">
+            <div className="flex items-center justify-center gap-3 sm:gap-4 text-slate-400 flex-wrap">
               <Link to="/faq" className="hover:text-cyan-400 transition-colors">
                 FAQs
+              </Link>
+              <span>•</span>
+              <Link to="/help" className="hover:text-cyan-400 transition-colors">
+                Help Center
               </Link>
               <span>•</span>
               <Link to="/terms" className="hover:text-cyan-400 transition-colors">
                 Terms &amp; Conditions
               </Link>
               <span>•</span>
-              <Link to="/track" className="hover:text-cyan-400 transition-colors">
-                Track Report
+              <Link to="/privacy" className="hover:text-cyan-400 transition-colors">
+                Privacy Policy
               </Link>
+              <span>•</span>
+              <Link to="/feedback" className="hover:text-cyan-400 transition-colors">
+                Feedback
+              </Link>
+              <span>•</span>
+              <button
+                type="button"
+                onClick={openCookieModal}
+                className="hover:text-teal-400 transition-colors underline cursor-pointer"
+              >
+                Cookie Settings
+              </button>
             </div>
           </div>
         </div>
@@ -220,3 +271,4 @@ export default function Footer() {
     </footer>
   );
 }
+

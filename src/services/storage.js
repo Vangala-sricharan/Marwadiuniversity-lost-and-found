@@ -36,7 +36,15 @@ export const initialSampleReports = [
     status: 'Submitted',
     createdAt: '2026-10-28T14:35:00.000Z',
     submittedAt: '2026-10-28T14:35:00.000Z',
+    updatedAt: '2026-10-28T14:35:00.000Z',
     formattedSubmissionDate: '28 October 2026, 14:35',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-28T14:35:00.000Z',
+        note: 'Report registered in CampusFind browser storage.'
+      }
+    ]
   },
   {
     token: '291020261320',
@@ -54,10 +62,23 @@ export const initialSampleReports = [
     contact: '+91 97123 45678',
     email: 'pooja.j@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.idCards,
-    status: 'Submitted',
+    status: 'Under Verification',
     createdAt: '2026-10-29T13:20:00.000Z',
     submittedAt: '2026-10-29T13:20:00.000Z',
+    updatedAt: '2026-10-29T14:00:00.000Z',
     formattedSubmissionDate: '29 October 2026, 13:20',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-29T13:20:00.000Z',
+        note: 'Found ID card report registered in CampusFind.'
+      },
+      {
+        stage: 'Under Verification',
+        timestamp: '2026-10-29T14:00:00.000Z',
+        note: 'Item verified with Cafeteria supervisor desk at MB315.'
+      }
+    ]
   },
   {
     token: '291020261145',
@@ -78,7 +99,15 @@ export const initialSampleReports = [
     status: 'Submitted',
     createdAt: '2026-10-29T11:45:00.000Z',
     submittedAt: '2026-10-29T11:45:00.000Z',
+    updatedAt: '2026-10-29T11:45:00.000Z',
     formattedSubmissionDate: '29 October 2026, 11:45',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-29T11:45:00.000Z',
+        note: 'Report submitted by student and recorded in CampusFind.'
+      }
+    ]
   },
   {
     token: '301020260910',
@@ -96,10 +125,28 @@ export const initialSampleReports = [
     contact: '+91 94280 11223',
     email: 'security.office@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.keysAccess,
-    status: 'Submitted',
+    status: 'Recovered',
     createdAt: '2026-10-30T09:10:00.000Z',
     submittedAt: '2026-10-30T09:10:00.000Z',
+    updatedAt: '2026-10-30T10:15:00.000Z',
     formattedSubmissionDate: '30 October 2026, 09:10',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-30T09:10:00.000Z',
+        note: 'Found key reported near Parking Bay Section C.'
+      },
+      {
+        stage: 'Under Verification',
+        timestamp: '2026-10-30T09:40:00.000Z',
+        note: 'Key deposited with Security Gatehouse for safe custody.'
+      },
+      {
+        stage: 'Recovered',
+        timestamp: '2026-10-30T10:15:00.000Z',
+        note: 'Owner matched key specifications and verified custody at MB315.'
+      }
+    ]
   },
   {
     token: '271020261745',
@@ -120,7 +167,15 @@ export const initialSampleReports = [
     status: 'Submitted',
     createdAt: '2026-10-27T17:45:00.000Z',
     submittedAt: '2026-10-27T17:45:00.000Z',
+    updatedAt: '2026-10-27T17:45:00.000Z',
     formattedSubmissionDate: '27 October 2026, 17:45',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-27T17:45:00.000Z',
+        note: 'Report submitted by student and recorded in CampusFind.'
+      }
+    ]
   },
   {
     token: '301020261030',
@@ -141,9 +196,54 @@ export const initialSampleReports = [
     status: 'Submitted',
     createdAt: '2026-10-30T10:30:00.000Z',
     submittedAt: '2026-10-30T10:30:00.000Z',
+    updatedAt: '2026-10-30T10:30:00.000Z',
     formattedSubmissionDate: '30 October 2026, 10:30',
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: '2026-10-30T10:30:00.000Z',
+        note: 'Item reported and left with 2nd floor library helpdesk.'
+      }
+    ]
   },
 ];
+
+/**
+ * Normalizes and safely migrates a report to guarantee status timeline compliance
+ * @param {Object} report
+ * @returns {Object}
+ */
+export const normalizeReport = (report) => {
+  if (!report || typeof report !== 'object') return report;
+
+  const createdAt = report.createdAt || report.submittedAt || new Date().toISOString();
+  let status = report.status || 'Submitted';
+
+  // Map legacy status if any
+  if (status === 'Found / Ready for Claim') {
+    status = 'Recovered';
+  } else if (!['Submitted', 'Under Verification', 'Recovered', 'Closed'].includes(status)) {
+    status = 'Submitted';
+  }
+
+  const existingHistory = Array.isArray(report.history) && report.history.length > 0 ? report.history : null;
+  const history = existingHistory || [
+    {
+      stage: 'Submitted',
+      timestamp: createdAt,
+      note: 'Report submitted by student and recorded in CampusFind LocalStorage.'
+    }
+  ];
+
+  return {
+    ...report,
+    status,
+    createdAt,
+    submittedAt: report.submittedAt || createdAt,
+    updatedAt: report.updatedAt || createdAt,
+    history
+  };
+};
 
 /**
  * Validates report fields before saving
@@ -181,7 +281,7 @@ export const validateReportData = (data) => {
 };
 
 /**
- * Retrieves all stored reports from LocalStorage safely
+ * Retrieves all stored reports from LocalStorage safely with normalized fields
  * @returns {Array} List of report objects
  */
 export const getStoredReports = () => {
@@ -189,18 +289,18 @@ export const getStoredReports = () => {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSampleReports));
-      return initialSampleReports;
+      return initialSampleReports.map(normalizeReport);
     }
     const parsed = JSON.parse(raw);
     if (!Array.isArray(parsed)) {
       console.warn('Corrupted storage data found. Re-initializing with defaults.');
       localStorage.setItem(STORAGE_KEY, JSON.stringify(initialSampleReports));
-      return initialSampleReports;
+      return initialSampleReports.map(normalizeReport);
     }
-    return parsed;
+    return parsed.map(normalizeReport);
   } catch (err) {
     console.error('Failed reading reports from localStorage:', err);
-    return initialSampleReports;
+    return initialSampleReports.map(normalizeReport);
   }
 };
 
@@ -216,7 +316,7 @@ export const isTokenTaken = (token) => {
 };
 
 /**
- * Retrieves a single report by its 12-digit token
+ * Retrieves a single report by its 12-digit token with normalized status and history
  * @param {string} token
  * @returns {Object|null}
  */
@@ -224,7 +324,8 @@ export const getReportByToken = (token) => {
   if (!token) return null;
   const clean = String(token).trim();
   const reports = getStoredReports();
-  return reports.find(r => r.token === clean || r.id === clean) || null;
+  const found = reports.find(r => r.token === clean || r.id === clean) || null;
+  return found ? normalizeReport(found) : null;
 };
 
 /**
@@ -241,7 +342,7 @@ export const sanitizeText = (str) => {
 
 /**
  * Saves a new report into LocalStorage with an automatic 12-digit DDMMYYYYHHmm token.
- * Handles collisions if another report exists with the identical minute-token.
+ * Defaults status to "Submitted" with full initial history entry.
  *
  * @param {Object} reportData
  * @returns {Object} Saved report object including the generated token
@@ -265,10 +366,11 @@ export const saveNewReport = (reportData) => {
 
   // 4. Build standard report structure with sanitized user inputs
   const reportType = (reportData.reportType || reportData.type || 'lost').toLowerCase();
+  const nowIso = now.toISOString();
   
   const newReport = {
     token,
-    id: token, // for backward compatibility with components reading item.id
+    id: token,
     reportType,
     type: reportType,
     studentName: sanitizeText(reportData.studentName),
@@ -285,10 +387,18 @@ export const saveNewReport = (reportData) => {
     email: reportData.contact.includes('@') ? sanitizeText(reportData.contact) : '',
     imageUrl: reportData.imageUrl || '',
     status: 'Submitted', // Requirement: Initial status must be "Submitted"
-    submittedAt: now.toISOString(),
-    createdAt: now.toISOString(),
+    submittedAt: nowIso,
+    createdAt: nowIso,
+    updatedAt: nowIso,
     formattedSubmissionDate: formatDisplayDateTime(now),
     handedToDesk: sanitizeText(reportData.handedToDesk || (reportType === 'found' ? 'In Finder Care' : '')),
+    history: [
+      {
+        stage: 'Submitted',
+        timestamp: nowIso,
+        note: `Report registered in CampusFind LocalStorage with token ${token}.`
+      }
+    ]
   };
 
   try {
@@ -303,7 +413,59 @@ export const saveNewReport = (reportData) => {
 };
 
 /**
- * Marks a lost item as found, updates its status, and triggers email notification to the owner
+ * Updates a report's status in LocalStorage with audit history for prototype demonstration
+ * Valid stages: 'Submitted', 'Under Verification', 'Recovered', 'Closed'
+ *
+ * @param {string} token
+ * @param {string} newStage
+ * @param {string} [customNote]
+ * @returns {Object} Updated report
+ */
+export const updateReportStatus = (token, newStage, customNote = '') => {
+  const validStages = ['Submitted', 'Under Verification', 'Recovered', 'Closed'];
+  if (!validStages.includes(newStage)) {
+    throw new Error(`Invalid stage: ${newStage}. Expected one of: ${validStages.join(', ')}`);
+  }
+
+  const reports = getStoredReports();
+  const index = reports.findIndex(r => r.token === token || r.id === token);
+  if (index === -1) {
+    throw new Error('Report not found with this registration token.');
+  }
+
+  const existing = normalizeReport(reports[index]);
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const note = customNote || `Status updated to ${newStage} in CampusFind prototype.`;
+  const updatedHistory = [
+    ...(existing.history || []),
+    {
+      stage: newStage,
+      timestamp: nowIso,
+      note
+    }
+  ];
+
+  const updatedReport = {
+    ...existing,
+    status: newStage,
+    updatedAt: nowIso,
+    history: updatedHistory
+  };
+
+  reports[index] = updatedReport;
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+  } catch (err) {
+    console.error('Failed saving updated status to storage:', err);
+  }
+
+  return updatedReport;
+};
+
+/**
+ * Marks a lost item as found, updates its status to Recovered, and triggers email notification
  * @param {string} token 
  * @param {Object} finderDetails
  * @returns {Promise<{ updatedReport: Object, emailReceipt: Object }>}
@@ -315,23 +477,32 @@ export const markItemAsFound = async (token, finderDetails) => {
     throw new Error('Report not found with this registration token.');
   }
 
-  const existing = reports[index];
+  const existing = normalizeReport(reports[index]);
   const now = new Date();
+  const nowIso = now.toISOString();
 
   const sanitizedFinder = {
     finderName: sanitizeText(finderDetails.finderName),
     finderContact: sanitizeText(finderDetails.finderContact),
     foundLocation: sanitizeText(finderDetails.foundLocation),
     note: sanitizeText(finderDetails.note || ''),
-    markedAt: now.toISOString(),
+    markedAt: nowIso,
     formattedMarkedAt: formatDisplayDateTime(now),
   };
 
   const updatedReport = {
     ...existing,
-    status: 'Found / Ready for Claim',
+    status: 'Recovered',
     foundDetails: sanitizedFinder,
-    updatedAt: now.toISOString(),
+    updatedAt: nowIso,
+    history: [
+      ...(existing.history || []),
+      {
+        stage: 'Recovered',
+        timestamp: nowIso,
+        note: `Located by ${sanitizedFinder.finderName} at ${sanitizedFinder.foundLocation}.`
+      }
+    ]
   };
 
   reports[index] = updatedReport;
