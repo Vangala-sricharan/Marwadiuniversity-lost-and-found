@@ -15,7 +15,10 @@ export const imageAssets = {
   },
   logo: {
     campusFind: '/images/logo/campusfind-logo.svg',
+    campusFindDark: '/images/logo/campusfind-logo-dark.svg',
+    campusFindWhite: '/images/logo/campusfind-logo-white.svg',
     marwadiUniversity: '/images/logo/marwadi-university-logo.svg',
+    marwadiUniversityWhite: '/images/logo/marwadi-university-logo-white.svg',
     marwadiUniversityPng: '/images/logo/marwadi-university-logo.png',
   },
   categories: {

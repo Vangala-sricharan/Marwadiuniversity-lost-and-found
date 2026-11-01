@@ -80,15 +80,15 @@ export default function LegalConsentGate({ children }) {
             <img 
               src={imageAssets.logo.campusFind} 
               alt="CampusFind Logo" 
-              className="h-9 w-auto brightness-0 invert"
+              className="h-9 w-auto object-contain"
             />
             <div className="h-6 w-px bg-slate-700"></div>
             <img 
-              src={imageAssets.logo.marwadiUniversity} 
+              src={imageAssets.logo.marwadiUniversityWhite || imageAssets.logo.marwadiUniversity} 
               alt="Marwadi University" 
-              className="h-7 w-auto brightness-0 invert opacity-80"
+              className="h-7 w-auto object-contain"
               onError={(e) => {
-                e.currentTarget.src = imageAssets.logo.marwadiUniversityPng;
+                e.currentTarget.src = imageAssets.logo.marwadiUniversity;
               }}
             />
           </div>

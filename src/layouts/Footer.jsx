@@ -72,7 +72,10 @@ export default function Footer() {
               <img 
                 src={imageAssets.logo.campusFind} 
                 alt="CampusFind Logo" 
-                className="h-10 w-auto brightness-0 invert"
+                className="h-10 w-auto object-contain"
+                onError={(e) => {
+                  e.currentTarget.src = '/images/logo/campusfind-logo.svg';
+                }}
               />
             </div>
             
@@ -82,11 +85,11 @@ export default function Footer() {
 
             <div className="pt-2 flex items-center gap-3">
               <img 
-                src={imageAssets.logo.marwadiUniversity} 
+                src={imageAssets.logo.marwadiUniversityWhite || imageAssets.logo.marwadiUniversity} 
                 alt="Marwadi University Logo" 
-                className="h-8 w-auto brightness-0 invert opacity-80"
+                className="h-8 w-auto object-contain"
                 onError={(e) => {
-                  e.currentTarget.src = imageAssets.logo.marwadiUniversityPng;
+                  e.currentTarget.src = imageAssets.logo.marwadiUniversity;
                 }}
               />
               <div className="pl-3 border-l border-slate-700 text-xs">

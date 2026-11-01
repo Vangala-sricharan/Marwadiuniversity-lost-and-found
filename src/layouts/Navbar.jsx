@@ -79,7 +79,7 @@ export default function Navbar() {
             <div className="flex items-center gap-2 xl:gap-2.5 shrink-0">
               <Link to="/" className="flex items-center group focus:outline-none shrink-0" aria-label="CampusFind Home">
                 <img 
-                  src={imageAssets.logo.campusFind} 
+                  src={imageAssets.logo.campusFindDark || imageAssets.logo.campusFind} 
                   alt="CampusFind Lost and Found Portal" 
                   className="w-[120px] sm:w-[130px] xl:w-[142px] h-auto max-h-8 sm:max-h-9 object-contain transition-transform duration-200 group-hover:scale-101"
                 />

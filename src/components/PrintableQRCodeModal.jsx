@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from 'react';
 import QRCode from 'qrcode';
+import { toPng } from 'html-to-image';
 import { 
   QrCode, 
   Printer, 
@@ -9,8 +10,12 @@ import {
   Check, 
   Building2, 
   Scissors,
-  Sparkles
+  Sparkles,
+  Loader2,
+  ShieldCheck,
+  Tag
 } from 'lucide-react';
+import { imageAssets } from '../config/imageAssets';
 
 // Official deployed Vercel domain for QR recovery links
 export const DEPLOYED_RECOVERY_DOMAIN = 'https://marwadiuniversity-lost-and-found.vercel.app';
@@ -18,6 +23,8 @@ export const DEPLOYED_RECOVERY_DOMAIN = 'https://marwadiuniversity-lost-and-foun
 export default function PrintableQRCodeModal({ report, onClose }) {
   const [qrDataUrl, setQrDataUrl] = useState('');
   const [copied, setCopied] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
+  const [downloadSuccess, setDownloadSuccess] = useState(false);
   const printRef = useRef(null);
 
   if (!report) return null;
@@ -26,6 +33,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
   // QR code encodes the deployed Vercel domain recovery URL (per Phase 1 requirements)
   const recoveryUrl = `${DEPLOYED_RECOVERY_DOMAIN}/recover/${token}`;
   const localTestUrl = `/recover/${token}`;
+  const fileName = `CampusFind-Belonging-ID-Tag-${token}.png`;
 
   // Keyboard accessibility: Escape key closes the modal
   useEffect(() => {
@@ -43,7 +51,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     QRCode.toDataURL(
       recoveryUrl,
       {
-        width: 320,
+        width: 360,
         margin: 2,
         color: {
           dark: '#0A1A2F',
@@ -65,14 +73,219 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     window.print();
   };
 
-  const handleDownload = () => {
-    if (!qrDataUrl) return;
-    const a = document.createElement('a');
-    a.href = qrDataUrl;
-    a.download = `CampusFind-QR-Recovery-${token}.png`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+  /**
+   * High-Fidelity Canvas Fallback
+   * Automatically invoked if html-to-image encounters an unexpected browser constraint.
+   * Renders the complete Belonging ID Tag design faithfully on a 2x scaled HTML5 canvas.
+   */
+  const handleCanvasFallbackDownload = async () => {
+    try {
+      const width = 1440;
+      const height = 760;
+      const canvas = document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (!ctx) throw new Error('Canvas 2D context unavailable');
+
+      // 1. Background fill
+      ctx.fillStyle = '#FFFFFF';
+      ctx.fillRect(0, 0, width, height);
+
+      // 2. Outer dashed cutting border
+      ctx.save();
+      ctx.strokeStyle = '#94A3B8';
+      ctx.lineWidth = 4;
+      ctx.setLineDash([16, 10]);
+      ctx.strokeRect(32, 32, width - 64, height - 64);
+      ctx.restore();
+
+      // 3. Top Cut Guide Text
+      ctx.fillStyle = '#475569';
+      ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+      ctx.fillText('✂  CUT ALONG DASHED BORDER', 54, 76);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+      const rightHeaderText = 'MARWADI UNIVERSITY OFFICIAL TAG';
+      const rightTextWidth = ctx.measureText(rightHeaderText).width;
+      ctx.fillText(rightHeaderText, width - 54 - rightTextWidth, 76);
+
+      // 4. Inner Badge Card Container
+      const cardX = 54;
+      const cardY = 104;
+      const cardW = width - 108;
+      const cardH = height - 150;
+
+      ctx.fillStyle = '#FFFFFF';
+      ctx.strokeStyle = '#CBD5E1';
+      ctx.lineWidth = 2;
+      ctx.strokeRect(cardX, cardY, cardW, cardH);
+
+      // 5. QR Code on Left Column
+      const qrBoxX = cardX + 36;
+      const qrBoxY = cardY + 36;
+      const qrBoxSize = 420;
+
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.strokeRect(qrBoxX, qrBoxY, qrBoxSize, qrBoxSize);
+
+      if (qrDataUrl) {
+        const qrImg = new Image();
+        qrImg.src = qrDataUrl;
+        await new Promise((res) => {
+          if (qrImg.complete) res(true);
+          qrImg.onload = res;
+          qrImg.onerror = res;
+        });
+        ctx.drawImage(qrImg, qrBoxX + 10, qrBoxY + 10, qrBoxSize - 20, qrBoxSize - 20);
+      }
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = 'bold 20px system-ui, -apple-system, sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('SCAN WITH ANY SMARTPHONE CAMERA', qrBoxX + qrBoxSize / 2, qrBoxY + qrBoxSize + 40);
+      ctx.textAlign = 'left';
+
+      // 6. Right Column Content
+      const colX = qrBoxX + qrBoxSize + 50;
+
+      // Brand Title & Belonging Tag
+      ctx.fillStyle = '#0F2347';
+      ctx.font = '800 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText('CAMPUSFIND  •  MARWADI UNIVERSITY', colX, cardY + 68);
+
+      // Belonging Identification Pill
+      ctx.fillStyle = '#CCFBF1';
+      ctx.fillRect(cardX + cardW - 320, cardY + 42, 280, 40);
+      ctx.strokeStyle = '#99F6E4';
+      ctx.strokeRect(cardX + cardW - 320, cardY + 42, 280, 40);
+      ctx.fillStyle = '#115E59';
+      ctx.font = 'bold 18px system-ui, -apple-system, sans-serif';
+      ctx.fillText('BELONGING IDENTIFICATION', cardX + cardW - 300, cardY + 68);
+
+      // Item Name
+      ctx.fillStyle = '#0F172A';
+      ctx.font = '900 42px system-ui, -apple-system, sans-serif';
+      const truncatedName = report.itemName && report.itemName.length > 28 ? report.itemName.slice(0, 26) + '...' : (report.itemName || 'Item');
+      ctx.fillText(truncatedName, colX, cardY + 140);
+
+      // Category & Location
+      ctx.fillStyle = '#475569';
+      ctx.font = '600 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText(`Category: ${report.category || 'Belonging'}  •  ${report.location || 'Campus Location'}`, colX, cardY + 180);
+
+      // Owner & Token Box
+      const boxY = cardY + 215;
+      const boxW = cardX + cardW - colX - 36;
+      ctx.fillStyle = '#F8FAFC';
+      ctx.fillRect(colX, boxY, boxW, 140);
+      ctx.strokeStyle = '#E2E8F0';
+      ctx.strokeRect(colX, boxY, boxW, 140);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '500 22px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Registered Owner:', colX + 24, boxY + 48);
+      ctx.fillStyle = '#0F172A';
+      ctx.font = 'bold 24px system-ui, -apple-system, sans-serif';
+      ctx.fillText(report.studentName || 'Student (Protected)', colX + 220, boxY + 48);
+
+      ctx.fillStyle = '#64748B';
+      ctx.font = '500 22px system-ui, -apple-system, sans-serif';
+      ctx.fillText('Registration Token:', colX + 24, boxY + 104);
+      ctx.fillStyle = '#0F766E';
+      ctx.font = 'bold 26px monospace';
+      ctx.fillText(token, colX + 240, boxY + 105);
+
+      // Assistance Box (MB315)
+      const noticeY = boxY + 160;
+      ctx.fillStyle = '#FFFBEB';
+      ctx.fillRect(colX, noticeY, boxW, 110);
+      ctx.strokeStyle = '#FDE68A';
+      ctx.strokeRect(colX, noticeY, boxW, 110);
+
+      ctx.fillStyle = '#78350F';
+      ctx.font = 'bold 22px system-ui, -apple-system, sans-serif';
+      ctx.fillText('🏢  If found, please scan this QR code or visit MB315,', colX + 24, noticeY + 44);
+      ctx.fillText('    Marwadi University, for further assistance.', colX + 24, noticeY + 80);
+
+      // Trigger export
+      const dataUrl = canvas.toDataURL('image/png', 1.0);
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+    } catch (err) {
+      console.error('Canvas fallback download failed:', err);
+    }
+  };
+
+  /**
+   * Primary PNG Download Handler
+   * Captures the entire ID Tag design container (dashed border, headings, logos, QR, metadata, MB315 notice)
+   * as a crisp 2.5x high-resolution PNG image named CampusFind-Belonging-ID-Tag-[TOKEN].png.
+   */
+  const handleDownload = async () => {
+    if (!printRef.current) return;
+    if (isDownloading) return;
+
+    try {
+      setIsDownloading(true);
+
+      // Ensure QR code and any image assets inside the tag element are fully loaded
+      const imgs = Array.from(printRef.current.querySelectorAll('img'));
+      await Promise.all(
+        imgs.map(
+          (img) =>
+            new Promise((resolve) => {
+              if (img.complete && img.naturalHeight !== 0) {
+                resolve(true);
+              } else {
+                img.onload = () => resolve(true);
+                img.onerror = () => resolve(false);
+                setTimeout(() => resolve(false), 1200);
+              }
+            })
+        )
+      );
+
+      // Brief animation frame to guarantee stable paint
+      await new Promise((resolve) => requestAnimationFrame(resolve));
+      await new Promise((resolve) => setTimeout(resolve, 80));
+
+      const dataUrl = await toPng(printRef.current, {
+        pixelRatio: 2.5,
+        backgroundColor: '#FFFFFF',
+        cacheBust: true,
+        filter: (node) => {
+          // Exclude anything explicitly tagged as print-hide if present
+          if (node.classList && node.classList.contains('print-hide')) {
+            return false;
+          }
+          return true;
+        },
+      });
+
+      const link = document.createElement('a');
+      link.download = fileName;
+      link.href = dataUrl;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+
+      setDownloadSuccess(true);
+      setTimeout(() => setDownloadSuccess(false), 2500);
+    } catch (err) {
+      console.warn('html-to-image encountered an issue, running high-fidelity canvas fallback:', err);
+      await handleCanvasFallbackDownload();
+    } finally {
+      setIsDownloading(false);
+    }
   };
 
   const handleCopyLink = () => {
@@ -112,7 +325,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
           transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 300ms ease;
         }
         .qr-code-box:hover {
-          transform: scale(1.04);
+          transform: scale(1.02);
         }
 
         @keyframes qrModalFadeIn {
@@ -234,7 +447,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
             display: flex !important;
             flex-direction: row !important;
             align-items: stretch !important;
-            gap: 28px !important;
+            gap: 24px !important;
             width: 100% !important;
             background: #ffffff !important;
             border: 1px solid #cbd5e1 !important;
@@ -306,27 +519,30 @@ export default function PrintableQRCodeModal({ report, onClose }) {
           <div className="print-hide flex items-center justify-between text-xs text-slate-500">
             <span>Identification Tag Preview</span>
             <span className="hidden sm:inline-flex items-center gap-1 text-teal-700 font-semibold">
-              <Sparkles className="w-3.5 h-3.5" /> Ready to print or download
+              <Sparkles className="w-3.5 h-3.5" /> Ready to print or download as PNG
             </span>
           </div>
 
-          {/* Printable Tag Container (Centered and full-width on print) */}
+          {/* Printable & Exportable Tag Container */}
+          {/* This element includes the dashed cutting border and all badge contents captured in the PNG */}
           <div 
             id="printable-tag-area"
             ref={printRef}
-            className="bg-slate-50/80 border-2 border-dashed border-slate-300 hover:border-slate-400 transition-colors rounded-3xl p-4 sm:p-6 text-slate-900 relative shadow-sm"
+            className="bg-white border-2 border-dashed border-[#0F2347]/40 hover:border-[#0F2347]/70 transition-colors rounded-3xl p-4 sm:p-6 text-slate-900 relative shadow-sm"
           >
-            {/* Scissor Cut Line Guide (hidden during print) */}
-            <div className="print-hide flex items-center justify-between text-[10px] text-slate-400 uppercase font-bold tracking-wider mb-3 px-1">
-              <span className="flex items-center gap-1.5 text-slate-500">
-                <Scissors className="w-3.5 h-3.5" />
+            {/* 1. Scissor Cut Line Guide & Official Tag Heading */}
+            <div className="flex items-center justify-between text-[11px] text-slate-500 uppercase font-bold tracking-wider mb-3 px-1 select-none">
+              <span className="flex items-center gap-1.5 text-slate-700 font-bold">
+                <Scissors className="w-3.5 h-3.5 text-slate-600" />
                 Cut along dashed border
               </span>
-              <span>Marwadi University Official Tag</span>
+              <span className="text-slate-600 font-extrabold tracking-wider">
+                Marwadi University Official Tag
+              </span>
             </div>
 
             {/* Inner Badge Layout (Desktop: Horizontal 2-columns; Mobile: stacked) */}
-            <div className="tag-inner-layout flex flex-col sm:flex-row items-center sm:items-stretch gap-6 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-sm">
+            <div className="tag-inner-layout flex flex-col sm:flex-row items-center sm:items-stretch gap-6 bg-white p-4 sm:p-6 rounded-2xl border border-slate-200/90 shadow-xs">
               
               {/* LEFT COLUMN: Large, Clearly Scannable QR Code */}
               <div className="tag-qr-col w-full sm:w-[250px] shrink-0 flex flex-col items-center justify-center">
@@ -336,6 +552,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
                       src={qrDataUrl} 
                       alt={`QR Code for ${report.itemName}`}
                       className="w-full h-full object-contain group-hover:scale-102 transition-transform duration-300"
+                      crossOrigin="anonymous"
                     />
                   ) : (
                     <div className="w-full h-full flex flex-col items-center justify-center text-xs text-slate-400 gap-2">
@@ -344,7 +561,7 @@ export default function PrintableQRCodeModal({ report, onClose }) {
                     </div>
                   )}
                 </div>
-                <span className="text-[10px] text-slate-400 mt-2 font-medium tracking-wide uppercase">
+                <span className="text-[10px] sm:text-[11px] text-slate-500 mt-2.5 font-bold tracking-wider uppercase text-center">
                   Scan with any smartphone camera
                 </span>
               </div>
@@ -354,12 +571,31 @@ export default function PrintableQRCodeModal({ report, onClose }) {
                 
                 {/* Branding & Identification Pill */}
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-2 mb-2">
-                    <span className="text-[11px] font-black uppercase tracking-widest text-[#0F2347]">
-                      CAMPUSFIND &bull; MARWADI UNIVERSITY
-                    </span>
-                    <span className="inline-flex items-center px-2.5 py-0.5 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-extrabold uppercase tracking-wider">
-                      BELONGING IDENTIFICATION
+                  <div className="flex flex-wrap items-center justify-between gap-2.5 mb-2.5 pb-2 border-b border-slate-100">
+                    {/* Brand Logos & Name */}
+                    <div className="flex items-center gap-2">
+                      <img 
+                        src={imageAssets.logo.campusFindDark || '/images/logo/campusfind-logo-dark.svg'} 
+                        alt="CampusFind" 
+                        className="h-6 w-auto object-contain"
+                        crossOrigin="anonymous"
+                      />
+                      <span className="h-4 w-[1px] bg-slate-300"></span>
+                      <img 
+                        src={imageAssets.logo.marwadiUniversity || '/images/logo/marwadi-university-logo.svg'} 
+                        alt="Marwadi University" 
+                        className="h-5 sm:h-5.5 w-auto object-contain"
+                        crossOrigin="anonymous"
+                        onError={(e) => {
+                          e.currentTarget.src = imageAssets.logo.marwadiUniversityPng || '/images/logo/marwadi-university-logo.png';
+                        }}
+                      />
+                    </div>
+
+                    {/* Belonging Identification Pill */}
+                    <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-teal-50 text-teal-800 border border-teal-200 text-[10px] font-extrabold uppercase tracking-wider shrink-0">
+                      <ShieldCheck className="w-3 h-3 text-teal-600" />
+                      Belonging Identification
                     </span>
                   </div>
 
@@ -370,13 +606,14 @@ export default function PrintableQRCodeModal({ report, onClose }) {
 
                   {/* Category & Location metadata */}
                   <div className="flex flex-wrap items-center gap-2 text-xs text-slate-500 mt-1">
-                    <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded">
+                    <span className="font-semibold text-slate-700 bg-slate-100 px-2 py-0.5 rounded inline-flex items-center gap-1">
+                      <Tag className="w-3 h-3 text-slate-500" />
                       {report.category || 'Belonging'}
                     </span>
                     {report.location && (
                       <>
-                        <span>&bull;</span>
-                        <span className="truncate">{report.location}</span>
+                        <span className="text-slate-300">&bull;</span>
+                        <span className="truncate font-medium text-slate-600">{report.location}</span>
                       </>
                     )}
                   </div>
@@ -386,14 +623,14 @@ export default function PrintableQRCodeModal({ report, onClose }) {
                 <div className="bg-slate-50 border border-slate-200/90 rounded-2xl p-3.5 space-y-1.5">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-slate-500 font-medium">Registered Owner:</span>
-                    <span className="font-bold text-slate-900 truncate max-w-[200px]">
-                      {report.studentName}
+                    <span className="font-bold text-slate-900 truncate max-w-[220px]">
+                      {report.studentName || 'Student (Protected)'}
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-200/60">
+                  <div className="flex items-center justify-between text-xs pt-1.5 border-t border-slate-200/60">
                     <span className="text-slate-500 font-medium">Registration Token:</span>
-                    <span className="font-mono text-sm font-black text-teal-800 tracking-wider bg-white px-2 py-0.5 rounded border border-slate-200">
+                    <span className="font-mono text-sm font-black text-teal-800 tracking-wider bg-white px-2.5 py-0.5 rounded border border-slate-200 shadow-2xs">
                       {token}
                     </span>
                   </div>
@@ -448,10 +685,26 @@ export default function PrintableQRCodeModal({ report, onClose }) {
             <button
               type="button"
               onClick={handleDownload}
-              className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 text-slate-700 font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer order-2 sm:order-1"
+              disabled={isDownloading}
+              className="px-4 py-2.5 rounded-xl border border-slate-300 hover:bg-slate-100 active:bg-slate-200 text-slate-700 font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2 cursor-pointer order-2 sm:order-1 disabled:opacity-60 disabled:cursor-not-allowed shadow-2xs"
+              title="Download entire ID tag design with cutting border as a high-quality PNG image"
             >
-              <Download className="w-4 h-4" />
-              <span>Download PNG</span>
+              {isDownloading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin text-teal-600" />
+                  <span>Generating PNG...</span>
+                </>
+              ) : downloadSuccess ? (
+                <>
+                  <Check className="w-4 h-4 text-emerald-600" />
+                  <span className="text-emerald-700">Downloaded Tag!</span>
+                </>
+              ) : (
+                <>
+                  <Download className="w-4 h-4 text-slate-700" />
+                  <span>Download PNG</span>
+                </>
+              )}
             </button>
 
             <div className="flex items-center gap-2.5 order-1 sm:order-2">
@@ -479,4 +732,3 @@ export default function PrintableQRCodeModal({ report, onClose }) {
     </div>
   );
 }
-

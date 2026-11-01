@@ -371,7 +371,7 @@ export default function HelpPage() {
                 {
                   step: 3,
                   title: 'Print or Download the Badge',
-                  desc: 'Click "Print Sticker Tag" for dedicated print-mode output (cleared of all overlays and buttons) or "Download PNG" to save the high-resolution QR graphic.',
+                  desc: 'Click "Print Sticker Tag" for dedicated print-mode output or "Download PNG" to export the complete ID tag badge with dashed cutting border, branding, QR code, and MB315 assistance instructions.',
                 },
                 {
                   step: 4,
