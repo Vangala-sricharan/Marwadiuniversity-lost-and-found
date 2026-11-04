@@ -4,26 +4,23 @@ import {
   MapPin, 
   Calendar, 
   Clock, 
-  User, 
-  Phone, 
-  Mail, 
   ShieldCheck, 
   Building2, 
-  Share2, 
   CheckCircle2,
-  AlertTriangle,
+  Mail,
   QrCode,
-  Printer,
-  Send
+  Printer
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
 import PrintableQRCodeModal from './PrintableQRCodeModal';
 import MarkAsFoundModal from './MarkAsFoundModal';
+import PrintItemModal from './PrintItemModal';
 
 export default function ItemDetailModal({ item, onClose, onUpdate }) {
   const [currentItem, setCurrentItem] = useState(item);
   const [showQRModal, setShowQRModal] = useState(false);
   const [showMarkFoundModal, setShowMarkFoundModal] = useState(false);
+  const [showPrintModal, setShowPrintModal] = useState(false);
 
   if (!currentItem) return null;
 
@@ -54,7 +51,12 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
             {isFoundStatus ? (
               <span className="inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-xs font-bold bg-emerald-100 text-emerald-800 border border-emerald-300">
                 <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                Found &amp; Owner Notified
+                Found &amp; Ready for Claim
+              </span>
+            ) : currentItem.status === 'Finder Information Submitted' ? (
+              <span className="inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full text-xs font-bold bg-teal-100 text-teal-800 border border-teal-300">
+                <span className="w-1.5 h-1.5 rounded-full bg-teal-600 animate-pulse"></span>
+                Finder Info Submitted
               </span>
             ) : (
               <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-xs font-medium bg-blue-50 text-blue-700 border border-blue-200">
@@ -67,12 +69,26 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
             </span>
           </div>
 
-          <button 
-            onClick={onClose}
-            className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-white/80 transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
+          <div className="flex items-center gap-1.5">
+            {/* Quick Print Button in Header */}
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(true)}
+              className="px-2.5 py-1 rounded-xl bg-white/90 hover:bg-white text-slate-700 hover:text-slate-900 border border-slate-200 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs hover:shadow-xs"
+              title="Print item information for physical copy"
+            >
+              <Printer className="w-3.5 h-3.5 text-teal-600" />
+              <span>Print</span>
+            </button>
+
+            <button 
+              onClick={onClose}
+              className="p-1.5 rounded-full text-slate-400 hover:text-slate-700 hover:bg-white/80 transition-colors cursor-pointer"
+              title="Close (Esc)"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
         </div>
 
         {/* Modal body */}
@@ -142,6 +158,30 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
             </div>
           )}
 
+          {/* QR Finder Submission Notice */}
+          {currentItem.finderSubmission && (
+            <div className="p-4 rounded-2xl bg-teal-50 border border-teal-200 text-xs space-y-2">
+              <div className="flex items-center justify-between text-teal-950 font-bold">
+                <span className="flex items-center gap-1.5">
+                  <CheckCircle2 className="w-4 h-4 text-teal-600" />
+                  Finder Information Recorded via QR
+                </span>
+                <span className="text-[11px] bg-teal-200/80 text-teal-950 px-2 py-0.5 rounded-full font-semibold">
+                  Under MB315 Verification
+                </span>
+              </div>
+              <div className="text-[11px] bg-white/80 p-3 rounded-xl border border-teal-100 space-y-1">
+                <div>
+                  <span className="text-slate-500">Reported Found Location: </span>
+                  <span className="font-semibold text-slate-800">{currentItem.finderSubmission.foundLocation}</span>
+                </div>
+                <div className="text-slate-500">
+                  Finder details securely registered and filed with campus authorities.
+                </div>
+              </div>
+            </div>
+          )}
+
           {/* Location & Time details */}
           <div className="bg-slate-50 rounded-2xl p-4 border border-slate-200/80 space-y-3">
             <h4 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-1.5">
@@ -205,7 +245,18 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
 
         {/* Modal footer with action buttons */}
         <div className="px-6 py-4 bg-slate-50 border-t border-slate-200 flex flex-wrap items-center justify-between gap-3">
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
+            {/* Primary Print Button */}
+            <button
+              type="button"
+              onClick={() => setShowPrintModal(true)}
+              className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+              title="Open print-friendly view of this item's information"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>Print Details</span>
+            </button>
+
             <button
               type="button"
               onClick={() => setShowQRModal(true)}
@@ -219,7 +270,7 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
               <button
                 type="button"
                 onClick={() => setShowMarkFoundModal(true)}
-                className="px-3.5 py-2 rounded-xl bg-teal-600 hover:bg-teal-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
+                className="px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-sm"
               >
                 <CheckCircle2 className="w-3.5 h-3.5" />
                 <span>I Found This</span>
@@ -244,7 +295,15 @@ export default function ItemDetailModal({ item, onClose, onUpdate }) {
         </div>
       </div>
 
-      {/* Printable QR Code Modal */}
+      {/* Print-Friendly Item Information Modal */}
+      {showPrintModal && (
+        <PrintItemModal
+          item={currentItem}
+          onClose={() => setShowPrintModal(false)}
+        />
+      )}
+
+      {/* Printable QR Code Tag Modal */}
       {showQRModal && (
         <PrintableQRCodeModal
           report={currentItem}

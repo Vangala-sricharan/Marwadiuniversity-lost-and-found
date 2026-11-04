@@ -9,10 +9,28 @@ import {
   Building2, 
   HelpCircle,
   Clock,
-  FileText
+  FileText,
+  Zap,
+  ExternalLink
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
 
+/**
+ * Navbar
+ *
+ * Sticky top white navigation bar for CampusFind.
+ * Height target: 85-95px total including internal padding.
+ * 
+ * Per restructuring requirements:
+ * All 7 primary navigation categories open in a NEW browser tab:
+ * 1. Home: /
+ * 2. Browse Items: /browse
+ * 3. Campus Landmarks: /campus-landmarks
+ * 4. How It Works: /how-it-works
+ * 5. Collection Points: /campus-guide
+ * 6. FAQs: /faq
+ * 7. Help: /help
+ */
 export default function Navbar() {
   const [isScrolled, setIsScrolled] = useState(false);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -31,7 +49,15 @@ export default function Navbar() {
     setMobileMenuOpen(false);
   }, [location.pathname]);
 
-  const isHome = location.pathname === '/';
+  const navCategories = [
+    { label: 'Home', href: '/', icon: Compass },
+    { label: 'Browse Items', href: '/browse', icon: Search },
+    { label: 'Campus Landmarks', href: '/campus-landmarks', icon: Building2 },
+    { label: 'How It Works', href: '/how-it-works', icon: Zap },
+    { label: 'Collection Points', href: '/campus-guide', icon: MapPin },
+    { label: 'FAQs', href: '/faq', icon: HelpCircle },
+    { label: 'Help', href: '/help', icon: HelpCircle },
+  ];
 
   return (
     <>
@@ -64,7 +90,7 @@ export default function Navbar() {
         </div>
       </div>
 
-      {/* Main Header / Sticky Navigation */}
+      {/* Main Header / Sticky Navigation Bar (Target: 85-95px on desktop) */}
       <header 
         className={`sticky top-0 z-50 transition-all duration-300 w-full ${
           isScrolled 
@@ -77,13 +103,19 @@ export default function Navbar() {
             
             {/* Left: Branding & Logos (Compact & Balanced) */}
             <div className="flex items-center gap-2 xl:gap-2.5 shrink-0">
-              <Link to="/" className="flex items-center group focus:outline-none shrink-0" aria-label="CampusFind Home">
+              <a 
+                href="/" 
+                target="_blank" 
+                rel="noopener noreferrer"
+                className="flex items-center group focus:outline-none shrink-0" 
+                aria-label="CampusFind Home (opens in new tab)"
+              >
                 <img 
                   src={imageAssets.logo.campusFindDark || imageAssets.logo.campusFind} 
                   alt="CampusFind Lost and Found Portal" 
                   className="w-[120px] sm:w-[130px] xl:w-[142px] h-auto max-h-8 sm:max-h-9 object-contain transition-transform duration-200 group-hover:scale-101"
                 />
-              </Link>
+              </a>
 
               <div className="h-5 w-[1px] bg-slate-200 hidden sm:block shrink-0"></div>
 
@@ -103,76 +135,26 @@ export default function Navbar() {
               </div>
             </div>
 
-            {/* Desktop Navigation Links - Flexible & Single Row */}
-            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 shrink-0">
-              <Link 
-                to="/" 
-                className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                  location.pathname === '/' 
-                    ? 'text-teal-700 bg-teal-50/90 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Home
-              </Link>
-
-              <Link 
-                to="/browse" 
-                className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-semibold whitespace-nowrap transition-colors ${
-                  location.pathname === '/browse' 
-                    ? 'text-teal-700 bg-teal-50/90 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Browse Items
-              </Link>
-
-              <a 
-                href="/#campus-showcase" 
-                className="px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors whitespace-nowrap"
-              >
-                Campus Landmarks
-              </a>
-
-              <a 
-                href="/#how-it-works" 
-                className="px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-medium text-slate-600 hover:text-slate-900 hover:bg-slate-100/80 transition-colors whitespace-nowrap"
-              >
-                How It Works
-              </a>
-
-              <Link 
-                to="/campus-guide" 
-                className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors ${
-                  location.pathname === '/campus-guide' 
-                    ? 'text-teal-700 bg-teal-50/90 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Collection Points
-              </Link>
-
-              <Link 
-                to="/faq" 
-                className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors ${
-                  location.pathname === '/faq' 
-                    ? 'text-teal-700 bg-teal-50/90 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                FAQs
-              </Link>
-
-              <Link 
-                to="/help" 
-                className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-medium whitespace-nowrap transition-colors ${
-                  location.pathname === '/help' 
-                    ? 'text-teal-700 bg-teal-50/90 font-bold' 
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
-                }`}
-              >
-                Help
-              </Link>
+            {/* Desktop Navigation Links - Flexible & Single Row, Opening in NEW TABS */}
+            <nav className="hidden lg:flex items-center gap-1 xl:gap-2 shrink-0" aria-label="Main Navigation">
+              {navCategories.map((item) => {
+                const isActive = location.pathname === item.href;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className={`px-2 xl:px-2.5 py-1 rounded-md text-xs xl:text-[13px] font-semibold whitespace-nowrap transition-colors flex items-center gap-1 ${
+                      isActive 
+                        ? 'text-teal-700 bg-teal-50/90 font-bold' 
+                        : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100/80'
+                    }`}
+                  >
+                    <span>{item.label}</span>
+                  </a>
+                );
+              })}
             </nav>
 
             {/* Mobile/Tablet Hamburger Button */}
@@ -189,80 +171,46 @@ export default function Navbar() {
           </div>
         </div>
 
-        {/* Mobile Dropdown Menu */}
+        {/* Mobile Dropdown Menu - Links open in NEW TABS and close drawer in current tab */}
         {mobileMenuOpen && (
           <div className="lg:hidden border-t border-slate-200 bg-white px-4 pt-3 pb-6 shadow-xl animate-in slide-in-from-top-2 duration-200">
             <div className="flex flex-col gap-1.5 py-2">
-              <Link
-                to="/"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold ${
-                  location.pathname === '/' ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Compass className="w-4 h-4 text-teal-600" />
-                Home
-              </Link>
-              <Link
-                to="/browse"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-semibold ${
-                  location.pathname === '/browse' ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <Search className="w-4 h-4 text-teal-600" />
-                Browse Lost & Found Directory
-              </Link>
+              {navCategories.map((item) => {
+                const Icon = item.icon;
+                const isActive = location.pathname === item.href;
+                return (
+                  <a
+                    key={item.href}
+                    href={item.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={`flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-semibold transition-colors ${
+                      isActive ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5">
+                      <Icon className="w-4 h-4 text-teal-600 shrink-0" />
+                      <span>{item.label}</span>
+                    </div>
+                    <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
+                  </a>
+                );
+              })}
+
               <a
-                href="/#campus-showcase"
+                href="/terms"
+                target="_blank"
+                rel="noopener noreferrer"
                 onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50"
+                className="flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50 border-t border-slate-100 mt-1 pt-2.5"
               >
-                <Building2 className="w-4 h-4 text-teal-600" />
-                Campus Landmarks
+                <div className="flex items-center gap-2.5">
+                  <FileText className="w-4 h-4 text-teal-600 shrink-0" />
+                  <span>Terms &amp; Conditions</span>
+                </div>
+                <ExternalLink className="w-3.5 h-3.5 text-slate-400" />
               </a>
-              <a
-                href="/#how-it-works"
-                onClick={() => setMobileMenuOpen(false)}
-                className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium text-slate-700 hover:bg-slate-50"
-              >
-                <HelpCircle className="w-4 h-4 text-teal-600" />
-                How It Works
-              </a>
-              <Link
-                to="/campus-guide"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
-                  location.pathname === '/campus-guide' ? 'bg-teal-50 text-teal-800' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <MapPin className="w-4 h-4 text-teal-600" />
-                Security & Collection Desks
-              </Link>
-              <Link
-                to="/faq"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
-                  location.pathname === '/faq' ? 'bg-teal-50 text-teal-800 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <HelpCircle className="w-4 h-4 text-teal-600" />
-                Frequently Asked Questions
-              </Link>
-              <Link
-                to="/help"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
-                  location.pathname === '/help' ? 'bg-teal-50 text-teal-800 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <HelpCircle className="w-4 h-4 text-teal-600" />
-                Help Center &amp; Guides
-              </Link>
-              <Link
-                to="/terms"
-                className={`flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm font-medium ${
-                  location.pathname === '/terms' ? 'bg-teal-50 text-teal-800 font-semibold' : 'text-slate-700 hover:bg-slate-50'
-                }`}
-              >
-                <FileText className="w-4 h-4 text-teal-600" />
-                Terms &amp; Conditions
-              </Link>
             </div>
 
             <div className="mt-4 pt-3 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">

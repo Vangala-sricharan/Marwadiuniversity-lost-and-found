@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { Search, PlusCircle, CheckCircle2, ArrowRight, Filter, AlertCircle } from 'lucide-react';
 import ItemCard from './ItemCard';
 import ItemDetailModal from './ItemDetailModal';
-import { getStoredReports } from '../services/storage';
+import { fetchReports } from '../services/api';
 
 export default function RecentItems() {
   const [items, setItems] = useState([]);
@@ -12,7 +12,17 @@ export default function RecentItems() {
   const [selectedItem, setSelectedItem] = useState(null);
 
   useEffect(() => {
-    setItems(getStoredReports());
+    let isMounted = true;
+    async function loadRecent() {
+      try {
+        const data = await fetchReports({ limit: 9 });
+        if (isMounted) setItems(data.reports || []);
+      } catch (err) {
+        if (isMounted) setItems([]);
+      }
+    }
+    loadRecent();
+    return () => { isMounted = false; };
   }, []);
 
   const filteredItems = items.filter((item) => {

@@ -13,7 +13,7 @@ import {
   ShieldCheck,
   Sparkles
 } from 'lucide-react';
-import { markItemAsFound } from '../services/storage';
+import { markItemAsFoundApi } from '../services/api';
 
 export default function MarkAsFoundModal({ item, onClose, onSuccess }) {
   const [formData, setFormData] = useState({
@@ -51,7 +51,7 @@ export default function MarkAsFoundModal({ item, onClose, onSuccess }) {
 
     setIsSubmitting(true);
     try {
-      const result = await markItemAsFound(item.token || item.id, formData);
+      const result = await markItemAsFoundApi(item.token || item.id, formData);
       setSuccessResult(result);
       if (onSuccess) {
         onSuccess(result.updatedReport);

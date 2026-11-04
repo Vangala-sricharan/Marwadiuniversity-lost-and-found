@@ -68,7 +68,9 @@ Traditional physical notice boards or informal WhatsApp groups lead to communica
 ## 5. Technology Stack
 
 * **Frontend Framework**: React 19 (Functional components, custom hooks, modular state)
-* **Build Tool & Dev Server**: Vite 8 with ESNext compilation
+* **Backend Runtime & API**: Express 4 running on Node.js / Vercel Serverless Functions (`/api/*`)
+* **Database**: MongoDB Atlas (`campusfind` database, fresh deployment)
+* **Build Tool & Dev Server**: Vite 8 with ESNext compilation and `tsx` server integration
 * **Routing**: React Router DOM 7 (Client-side SPA with scroll-to-top on route change)
 * **Styling & Design System**: Tailwind CSS 4 with custom university palette:
   * Deep Navy Blue (`#0F2347`, `#0A1A2F`)
@@ -76,7 +78,7 @@ Traditional physical notice boards or informal WhatsApp groups lead to communica
   * Cyan Accents (`#06B6D4`, `#22D3EE`)
   * Light Blue-Gray Surfaces (`#F8FAFC`, `#F1F5F9`)
 * **Iconography**: Lucide React
-* **Persistence**: Centralized browser LocalStorage (`campusfind_reports_v2`)
+* **Persistence**: MongoDB Atlas Single Source of Truth (`reports`, `finder_submissions`)
 * **Typography**: Plus Jakarta Sans & Inter via Google Fonts
 
 ---
@@ -231,42 +233,40 @@ CampusFind uses browser LocalStorage under the key `campusfind_reports_v2`.
 
 ---
 
-## 10. Deployment Information (Vercel)
+## 10. Database Architecture & Vercel Deployment
 
-The application includes `vercel.json` configured for single-page applications:
+MongoDB Atlas serves as the single source of truth for all campus reports.
 
+### Environment Setup
+Create a `.env` file or configure Vercel Environment Variables:
+```env
+MONGODB_URI="mongodb+srv://<username>:<password>@<cluster-address>/campusfind?retryWrites=true&w=majority"
+```
+
+### Vercel Serverless Architecture
+The application features serverless endpoints under `/api/*` and uses `vercel.json` rewrites:
 ```json
 {
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/((?!api/.*).*)",
       "destination": "/index.html"
     }
   ]
 }
 ```
 
-### Steps to Deploy to Vercel via GitHub:
-1. Push the codebase to your GitHub repository.
-2. In the [Vercel Dashboard](https://vercel.com), select **"Add New Project"** and import the repository.
-3. Vercel automatically detects Vite:
-   * **Framework Preset**: Vite
-   * **Build Command**: `npm run build`
-   * **Output Directory**: `dist`
-   * **Install Command**: `npm install`
-4. Click **Deploy**. The `vercel.json` rewrite guarantees direct URL refreshes on nested routes (`/track`, `/report-lost`, etc.) work seamlessly.
+### Steps to Deploy to Vercel:
+1. Push the repository to GitHub.
+2. In the [Vercel Dashboard](https://vercel.com), click **"New Project"** and import the repository.
+3. In **Settings -> Environment Variables**, configure:
+   * **Name**: `MONGODB_URI`
+   * **Value**: Your MongoDB Atlas connection URI (`mongodb+srv://.../campusfind`)
+4. Click **Deploy**. Vercel compiles the Vite frontend and deploys serverless functions for `/api/reports`, `/api/finder-submissions`, and `/api/health`.
 
 ---
 
-## 11. Known Limitations
-
-* **Client-Side Local Storage**: In this Phase 2/3 prototype, reports are stored in the user's browser LocalStorage. Data is not shared across separate physical computers without a remote database integration.
-* **Minute-Level Token Granularity**: Designed for standard university workflow. If simultaneous submissions exceed 1 report per minute on the same machine, the collision prevention prompts a 60-second wait.
-* **Status Workflow**: Current report status initializes to `"Submitted"`. Status updates are administered through MB315 verification.
-
----
-
-## 12. University Submission & License
+## 11. University Submission & License
 
 Developed for the End Semester Examination (ESE) project demonstration at **Marwadi University, Rajkot, Gujarat**.
 Licensed under the Apache-2.0 License.

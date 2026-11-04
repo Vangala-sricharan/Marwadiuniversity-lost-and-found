@@ -1,9 +1,73 @@
 import React from 'react';
-import { MapPin, Calendar, Clock, User, ArrowRight, ShieldCheck } from 'lucide-react';
+import { MapPin, Calendar, Clock, ArrowRight, ShieldCheck, CheckCircle2, AlertCircle, Archive, PackageCheck } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
 
+/**
+ * Returns color-coded badge styling based on item status and report type
+ * - Green for 'Found'
+ * - Orange for 'Lost'
+ * - Blue for 'Recovered' / 'Closed'
+ * - Cyan/Teal for 'Finder Information Submitted'
+ */
+function getStatusBadgeConfig(item) {
+  const normStatus = (item.status || '').toLowerCase();
+  const isRecovered = normStatus.includes('recovered') || normStatus.includes('closed');
+  const isFinderLogged = normStatus.includes('finder');
+  const isHandedOver = normStatus.includes('handed over') || normStatus.includes('mb315');
+  const isFound = item.type === 'found' || item.reportType === 'found';
+
+  // 1. Recovered / Closed (Blue)
+  if (isRecovered) {
+    return {
+      label: 'Recovered',
+      badgeClass: 'bg-blue-50 text-blue-800 border-blue-300',
+      dotClass: 'bg-blue-600',
+      icon: Archive,
+    };
+  }
+
+  // 2. Finder Info Logged (Teal / Cyan)
+  if (isFinderLogged) {
+    return {
+      label: 'Finder Info Logged',
+      badgeClass: 'bg-teal-50 text-teal-800 border-teal-300',
+      dotClass: 'bg-teal-500 animate-pulse',
+      icon: PackageCheck,
+    };
+  }
+
+  // 3. Handed Over to MB315 Desk (Emerald Green)
+  if (isHandedOver) {
+    return {
+      label: 'At MB315 Desk',
+      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+      dotClass: 'bg-emerald-600',
+      icon: CheckCircle2,
+    };
+  }
+
+  // 4. Found Item (Green)
+  if (isFound) {
+    return {
+      label: 'Found Item',
+      badgeClass: 'bg-emerald-50 text-emerald-800 border-emerald-300',
+      dotClass: 'bg-emerald-500',
+      icon: CheckCircle2,
+    };
+  }
+
+  // 5. Lost Item (Orange / Amber)
+  return {
+    label: 'Lost Item',
+    badgeClass: 'bg-amber-50 text-amber-800 border-amber-300',
+    dotClass: 'bg-amber-500 animate-pulse',
+    icon: AlertCircle,
+  };
+}
+
 export default function ItemCard({ item, onSelect }) {
-  const isLost = item.type === 'lost';
+  const badgeConfig = getStatusBadgeConfig(item);
+  const BadgeIcon = badgeConfig.icon;
   
   // Resolve category icon or placeholder
   const categoryIcon = imageAssets.categories[item.category] || imageAssets.placeholders.item;
@@ -14,25 +78,15 @@ export default function ItemCard({ item, onSelect }) {
       onClick={() => onSelect && onSelect(item)}
       className="bg-white rounded-2xl border border-slate-200/90 shadow-sm hover:shadow-md hover:border-slate-300 transition-all duration-200 overflow-hidden flex flex-col group cursor-pointer"
     >
-      {/* Top Banner & Status */}
+      {/* Top Banner & Color-Coded Status Badge */}
       <div className="p-4 pb-0 flex items-center justify-between gap-2">
-        {item.status === 'Found / Ready for Claim' ? (
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase bg-emerald-50 text-emerald-800 border border-emerald-300">
-            <span className="w-2 h-2 rounded-full bg-emerald-500"></span>
-            Located / Ready
-          </span>
-        ) : (
-          <span 
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase ${
-              isLost 
-                ? 'bg-rose-50 text-rose-700 border border-rose-200/70' 
-                : 'bg-teal-50 text-teal-700 border border-teal-200/70'
-            }`}
-          >
-            <span className={`w-2 h-2 rounded-full ${isLost ? 'bg-rose-500 animate-pulse' : 'bg-teal-500'}`}></span>
-            {isLost ? 'Lost Item' : 'Found Item'}
-          </span>
-        )}
+        <span 
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tracking-wide uppercase border ${badgeConfig.badgeClass}`}
+        >
+          <span className={`w-2 h-2 rounded-full ${badgeConfig.dotClass}`}></span>
+          <BadgeIcon className="w-3.5 h-3.5 shrink-0" />
+          <span>{badgeConfig.label}</span>
+        </span>
 
         <span className="text-[11px] font-mono text-slate-500 bg-slate-100/80 px-2 py-0.5 rounded font-medium">
           {item.token || item.id}
@@ -91,7 +145,7 @@ export default function ItemCard({ item, onSelect }) {
         </div>
       </div>
 
-      {/* Card Footer / Quick Action bar (No private contact or personal details) */}
+      {/* Card Footer / Quick Action bar */}
       <div className="bg-slate-50/80 px-4 py-2.5 border-t border-slate-100 flex items-center justify-between text-xs">
         <span className="text-slate-500 flex items-center gap-1.5 font-medium text-[11px]">
           <ShieldCheck className="w-3.5 h-3.5 text-teal-600" />

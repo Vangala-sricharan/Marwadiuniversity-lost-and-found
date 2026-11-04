@@ -13,7 +13,8 @@ import {
   ShieldCheck
 } from 'lucide-react';
 import { locationSuggestions, itemCategories } from '../config/imageAssets';
-import { saveNewReport } from '../services/storage';
+import { isValidMUEmail, isValidGRNumber } from '../services/storage';
+import { createReport } from '../services/api';
 
 export default function ReportLostPage() {
   const navigate = useNavigate();
@@ -21,6 +22,9 @@ export default function ReportLostPage() {
   // Form State
   const [formData, setFormData] = useState({
     studentName: '',
+    grNumber: '',
+    email: '',
+    contact: '',
     itemName: '',
     category: 'electronics',
     description: '',
@@ -29,7 +33,6 @@ export default function ReportLostPage() {
     specificSpot: '',
     date: new Date().toISOString().split('T')[0],
     approximateTime: '',
-    contact: '',
     imageUrl: '',
   });
 
@@ -40,9 +43,18 @@ export default function ReportLostPage() {
   const [submissionError, setSubmissionError] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
 
-  // Field change handler
+  // Field change handler with numeric 6-digit enforcement for grNumber
   const handleChange = (e) => {
     const { name, value } = e.target;
+    if (name === 'grNumber') {
+      const numericVal = value.replace(/\D/g, '').slice(0, 6);
+      setFormData(prev => ({ ...prev, grNumber: numericVal }));
+      if (errors.grNumber) {
+        setErrors(prev => ({ ...prev, grNumber: null }));
+      }
+      return;
+    }
+
     setFormData(prev => ({ ...prev, [name]: value }));
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: null }));
@@ -57,20 +69,26 @@ export default function ReportLostPage() {
     validateField(field, formData[field]);
   };
 
-  const isValidContact = (value) => {
-    if (!value) return false;
-    const trimmed = value.trim();
-    const isEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed);
-    const isPhone = /^[\+]?[(]?[0-9]{3}[)]?[-\s\.]?[0-9]{3}[-\s\.]?[0-9]{4,6}$/.test(trimmed.replace(/\s+/g, '')) || trimmed.replace(/\D/g, '').length >= 7;
-    return isEmail || isPhone;
-  };
-
   const validateField = (field, value) => {
     let err = null;
     switch (field) {
       case 'studentName':
         if (!value || !value.trim()) err = 'Student name is required.';
         else if (value.trim().length < 2) err = 'Please enter at least 2 characters.';
+        break;
+      case 'grNumber':
+        if (!value || !String(value).trim()) {
+          err = 'GR Number is required.';
+        } else if (!/^\d{6}$/.test(String(value).trim())) {
+          err = 'GR Number must be exactly 6 digits.';
+        }
+        break;
+      case 'email':
+        if (!value || !String(value).trim()) {
+          err = 'Please enter your valid Marwadi University email ID ending with @marwadiuniversity.ac.in.';
+        } else if (!isValidMUEmail(String(value).trim())) {
+          err = 'Please enter your valid Marwadi University email ID ending with @marwadiuniversity.ac.in.';
+        }
         break;
       case 'itemName':
         if (!value || !value.trim()) err = 'Item name is required.';
@@ -98,10 +116,12 @@ export default function ReportLostPage() {
         if (!value || !value.trim()) err = 'Approximate time lost is required (e.g. 11:30 AM).';
         break;
       case 'contact':
-        if (!value || !value.trim()) {
-          err = 'Contact number or email is required.';
-        } else if (!isValidContact(value)) {
-          err = 'Please provide a valid phone number (min 7 digits) or valid email address.';
+        // Optional secondary contact (phone)
+        if (value && value.trim()) {
+          const digits = value.replace(/\D/g, '');
+          if (digits.length > 0 && digits.length < 7) {
+            err = 'Please enter a valid phone number (minimum 7 digits).';
+          }
         }
         break;
       default:
@@ -138,14 +158,24 @@ export default function ReportLostPage() {
     setFormData(prev => ({ ...prev, imageUrl: '' }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (isSubmitting) return; // Prevent double submits
 
     setSubmissionError(null);
 
     // Validate all required fields
-    const fieldsToValidate = ['studentName', 'itemName', 'category', 'description', 'location', 'date', 'approximateTime', 'contact'];
+    const fieldsToValidate = [
+      'studentName', 
+      'grNumber', 
+      'email', 
+      'itemName', 
+      'category', 
+      'description', 
+      'location', 
+      'date', 
+      'approximateTime'
+    ];
     if (formData.location === 'Other') {
       fieldsToValidate.push('customLocation');
     }
@@ -160,6 +190,9 @@ export default function ReportLostPage() {
 
     setTouched({
       studentName: true,
+      grNumber: true,
+      email: true,
+      contact: true,
       itemName: true,
       category: true,
       description: true,
@@ -167,7 +200,6 @@ export default function ReportLostPage() {
       customLocation: true,
       date: true,
       approximateTime: true,
-      contact: true,
     });
 
     if (hasError) {
@@ -182,8 +214,11 @@ export default function ReportLostPage() {
         ? `Other: ${formData.customLocation.trim()}`
         : formData.location;
 
-      const savedReport = saveNewReport({
+      const savedReport = await createReport({
         studentName: formData.studentName,
+        grNumber: formData.grNumber,
+        email: formData.email,
+        contact: formData.contact || formData.email,
         itemName: formData.itemName,
         category: formData.category,
         description: formData.description,
@@ -193,20 +228,19 @@ export default function ReportLostPage() {
         specificSpot: formData.specificSpot,
         date: formData.date,
         approximateTime: formData.approximateTime,
-        contact: formData.contact,
         imageUrl: formData.imageUrl,
         reportType: 'lost',
         type: 'lost',
       });
 
-      // Navigate to the beautiful Phase 2 Submission Success Page
+      // Navigate to the Phase 2 Submission Success Page with MongoDB document
       navigate('/submission-success', {
         state: { report: savedReport },
         replace: true,
       });
     } catch (err) {
       setIsSubmitting(false);
-      setSubmissionError(err.message || 'An unexpected error occurred while saving your report.');
+      setSubmissionError(err.message || 'An unexpected error occurred while saving your report to MongoDB Atlas.');
       window.scrollTo({ top: 200, behavior: 'smooth' });
     }
   };
@@ -267,10 +301,10 @@ export default function ReportLostPage() {
             <div className="border-b border-slate-100 pb-8">
               <h2 className="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
                 <User className="w-5 h-5 text-teal-600" />
-                1. Student Information
+                1. Student Information &amp; Verification
               </h2>
               <p className="text-xs text-slate-500 mb-6">
-                Your contact details will only be used to reconnect you with your belonging or by security at MB315.
+                Institutional credentials verify university membership. Personal details remain protected under campus guidelines.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
@@ -301,10 +335,79 @@ export default function ReportLostPage() {
                   )}
                 </div>
 
-                {/* Contact Number or Email */}
+                {/* GR Number (Mandatory: Exactly 6 digits numeric) */}
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <label htmlFor="grNumber" className="block text-xs font-bold text-slate-700 uppercase tracking-wider">
+                      GR Number <span className="text-rose-500">*</span>
+                    </label>
+                    <span className="text-[11px] text-slate-400 font-mono">
+                      {formData.grNumber.length}/6 digits
+                    </span>
+                  </div>
+                  <input
+                    type="text"
+                    inputMode="numeric"
+                    id="grNumber"
+                    name="grNumber"
+                    maxLength={6}
+                    value={formData.grNumber}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('grNumber')}
+                    placeholder="e.g. 135062"
+                    className={`w-full px-4 py-3 rounded-xl text-sm font-mono tracking-wider border bg-slate-50/50 focus:bg-white focus:outline-none transition-all ${
+                      errors.grNumber && touched.grNumber
+                        ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                        : 'border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20'
+                    }`}
+                  />
+                  {errors.grNumber && touched.grNumber ? (
+                    <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.grNumber}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Must contain exactly 6 numeric digits (e.g. 135062).
+                    </p>
+                  )}
+                </div>
+
+                {/* Marwadi University Email ID (Mandatory: @marwadiuniversity.ac.in) */}
+                <div>
+                  <label htmlFor="email" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                    Marwadi University Email ID <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="email"
+                    id="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleChange}
+                    onBlur={() => handleBlur('email')}
+                    placeholder="student@marwadiuniversity.ac.in"
+                    className={`w-full px-4 py-3 rounded-xl text-sm border bg-slate-50/50 focus:bg-white focus:outline-none transition-all ${
+                      errors.email && touched.email
+                        ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
+                        : 'border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20'
+                    }`}
+                  />
+                  {errors.email && touched.email ? (
+                    <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1 font-medium">
+                      <AlertCircle className="w-3.5 h-3.5" />
+                      {errors.email}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Must end with @marwadiuniversity.ac.in
+                    </p>
+                  )}
+                </div>
+
+                {/* Phone / Alternate Contact (Optional) */}
                 <div>
                   <label htmlFor="contact" className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
-                    Contact Number or Email <span className="text-rose-500">*</span>
+                    Primary Phone Number <span className="text-slate-400 text-[10px] font-normal lowercase">(optional for SMS/call)</span>
                   </label>
                   <input
                     type="text"
@@ -313,17 +416,21 @@ export default function ReportLostPage() {
                     value={formData.contact}
                     onChange={handleChange}
                     onBlur={() => handleBlur('contact')}
-                    placeholder="e.g. +91 98765 43210 or student@marwadiuniversity.ac.in"
+                    placeholder="e.g. +91 98765 43210"
                     className={`w-full px-4 py-3 rounded-xl text-sm border bg-slate-50/50 focus:bg-white focus:outline-none transition-all ${
                       errors.contact && touched.contact
                         ? 'border-rose-400 ring-2 ring-rose-100 bg-rose-50/20'
                         : 'border-slate-300 focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20'
                     }`}
                   />
-                  {errors.contact && touched.contact && (
+                  {errors.contact && touched.contact ? (
                     <p className="mt-1.5 text-xs text-rose-600 flex items-center gap-1 font-medium">
                       <AlertCircle className="w-3.5 h-3.5" />
                       {errors.contact}
+                    </p>
+                  ) : (
+                    <p className="mt-1 text-[11px] text-slate-400">
+                      Used only for MB315 desk coordination. Never shown publicly.
                     </p>
                   )}
                 </div>

@@ -1,12 +1,12 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 80" fill="none">
-  <!-- CampusFind Brand Mark -->
+  <!-- CampusFind Brand Mark (White Variant for Dark Backgrounds) -->
   <defs>
-    <linearGradient id="cfGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="cfWhiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0E7490" />
       <stop offset="50%" stop-color="#0D9488" />
       <stop offset="100%" stop-color="#06B6D4" />
     </linearGradient>
-    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+    <linearGradient id="shieldWhiteGrad" x1="0%" y1="0%" x2="100%" y2="100%">
       <stop offset="0%" stop-color="#0F172A" />
       <stop offset="100%" stop-color="#1E293B" />
     </linearGradient>
@@ -15,15 +15,15 @@
   <!-- Icon emblem -->
   <g transform="translate(8, 10)">
     <!-- Base Rounded Hexagon / Shield -->
-    <rect x="0" y="0" width="60" height="60" rx="16" fill="url(#shieldGrad)" stroke="#334155" stroke-width="1.5" />
+    <rect x="0" y="0" width="60" height="60" rx="16" fill="url(#shieldWhiteGrad)" stroke="#334155" stroke-width="1.5" />
     <circle cx="30" cy="30" r="23" stroke="#0E7490" stroke-width="1" stroke-dasharray="2 3" opacity="0.6"/>
     
     <!-- Search Compass Radar Ring -->
-    <circle cx="28" cy="28" r="13" stroke="url(#cfGrad)" stroke-width="2.5" fill="none"/>
+    <circle cx="28" cy="28" r="13" stroke="url(#cfWhiteGrad)" stroke-width="2.5" fill="none"/>
     <!-- Radar Pin Point -->
     <circle cx="28" cy="28" r="4.5" fill="#22D3EE"/>
     <!-- Location Pin Bottom / Search Handle -->
-    <path d="M37 37L46 46" stroke="url(#cfGrad)" stroke-width="3" stroke-linecap="round"/>
+    <path d="M37 37L46 46" stroke="url(#cfWhiteGrad)" stroke-width="3" stroke-linecap="round"/>
     
     <!-- Academic Cap Accent on Top -->
     <path d="M28 17L37 21L28 25L19 21Z" fill="#F8FAFC" opacity="0.95"/>

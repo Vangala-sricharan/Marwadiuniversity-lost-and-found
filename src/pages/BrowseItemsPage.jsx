@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, Link } from 'react-router-dom';
 import { 
   Search, 
@@ -6,48 +6,62 @@ import {
   CheckCircle2, 
   RotateCcw,
   Sparkles,
-  Inbox
+  Inbox,
+  Loader2,
+  AlertCircle,
+  Database
 } from 'lucide-react';
 import ItemCard from '../components/ItemCard';
 import ItemDetailModal from '../components/ItemDetailModal';
 import { campusLocations, itemCategories } from '../config/imageAssets';
-import { getStoredReports } from '../services/storage';
+import { fetchReports } from '../services/api';
 
 export default function BrowseItemsPage() {
   const [searchParams, setSearchParams] = useSearchParams();
   const initialCategory = searchParams.get('category') || 'all';
 
   const [items, setItems] = useState([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [selectedType, setSelectedType] = useState('all'); // 'all' | 'lost' | 'found'
   const [selectedCategory, setSelectedCategory] = useState(initialCategory);
   const [selectedLocation, setSelectedLocation] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [activeModalItem, setActiveModalItem] = useState(null);
 
+  const [isLoading, setIsLoading] = useState(true);
+  const [errorMessage, setErrorMessage] = useState(null);
+
+  const loadReports = useCallback(async () => {
+    setIsLoading(true);
+    setErrorMessage(null);
+    try {
+      const data = await fetchReports({
+        type: selectedType,
+        category: selectedCategory,
+        location: selectedLocation,
+        search: searchQuery,
+        limit: 50,
+      });
+      setItems(data.reports || []);
+      setTotalCount(data.total || 0);
+    } catch (err) {
+      console.error('Error fetching reports from MongoDB:', err);
+      setErrorMessage(err.message || 'Failed to load reports from MongoDB Atlas.');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [selectedType, selectedCategory, selectedLocation, searchQuery]);
+
   useEffect(() => {
-    setItems(getStoredReports());
-  }, []);
+    loadReports();
+  }, [loadReports]);
 
   useEffect(() => {
     const cat = searchParams.get('category');
-    if (cat) {
+    if (cat && cat !== selectedCategory) {
       setSelectedCategory(cat);
     }
-  }, [searchParams]);
-
-  // Filter items
-  const filtered = items.filter(item => {
-    const matchType = selectedType === 'all' || item.type === selectedType;
-    const matchCat = selectedCategory === 'all' || item.category === selectedCategory;
-    const matchLoc = selectedLocation === 'all' || item.location === selectedLocation;
-    const matchQuery = 
-      item.itemName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      item.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (item.specificSpot && item.specificSpot.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      item.location.toLowerCase().includes(searchQuery.toLowerCase());
-
-    return matchType && matchCat && matchLoc && matchQuery;
-  });
+  }, [searchParams, selectedCategory]);
 
   const handleResetFilters = () => {
     setSelectedType('all');
@@ -98,95 +112,100 @@ export default function BrowseItemsPage() {
         <div className="bg-white rounded-3xl p-6 border border-slate-200/90 shadow-sm mb-8 space-y-5">
           
           {/* Row 1: Search and Type Switcher */}
-          <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
             
             {/* Search Input */}
-            <div className="relative flex-1">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+            <div className="md:col-span-7 relative">
+              <Search className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2" />
               <input
                 type="text"
+                placeholder="Search by item name, description, or specific spot..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by keywords, brand, color, or spot (e.g. Casio, Dell, Lab 402)..."
-                className="w-full pl-10 pr-4 py-2.5 rounded-xl border border-slate-300 text-sm bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-500 focus:ring-2 focus:ring-teal-500/20 transition-all text-slate-800 placeholder-slate-400"
+                className="w-full pl-11 pr-4 py-3 rounded-2xl bg-slate-50 border border-slate-200 text-sm text-slate-900 placeholder:text-slate-400 focus:bg-white focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500 transition-all"
               />
             </div>
 
-            {/* Type Switcher Pills */}
-            <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-2xl shrink-0">
+            {/* Type Switcher: All / Lost / Found */}
+            <div className="md:col-span-5 flex items-center bg-slate-100 p-1.5 rounded-2xl">
               <button
+                type="button"
                 onClick={() => setSelectedType('all')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all ${
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   selectedType === 'all'
                     ? 'bg-white text-slate-900 shadow-sm'
                     : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                All Reports ({items.length})
+                All Items
               </button>
               <button
+                type="button"
                 onClick={() => setSelectedType('lost')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   selectedType === 'lost'
-                    ? 'bg-rose-600 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-rose-700'
+                    ? 'bg-rose-50 text-rose-700 shadow-sm border border-rose-200'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-rose-400"></span>
-                Lost ({items.filter(i => i.type === 'lost').length})
+                Lost Only
               </button>
               <button
+                type="button"
                 onClick={() => setSelectedType('found')}
-                className={`px-4 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 ${
+                className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
                   selectedType === 'found'
-                    ? 'bg-teal-700 text-white shadow-sm'
-                    : 'text-slate-600 hover:text-teal-700'
+                    ? 'bg-teal-50 text-teal-800 shadow-sm border border-teal-200'
+                    : 'text-slate-600 hover:text-slate-900'
                 }`}
               >
-                <span className="w-2 h-2 rounded-full bg-teal-400"></span>
-                Found ({items.filter(i => i.type === 'found').length})
+                Found Only
               </button>
             </div>
 
           </div>
 
-          {/* Row 2: Category and Location Selectors */}
-          <div className="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-4 flex-wrap">
+          {/* Row 2: Category and Location Selects */}
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-slate-100">
+            
             <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
               
               {/* Category Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Category:</span>
+              <div className="w-full sm:w-auto">
                 <select
                   value={selectedCategory}
                   onChange={(e) => {
                     setSelectedCategory(e.target.value);
                     if (e.target.value === 'all') {
-                      setSearchParams({});
+                      searchParams.delete('category');
+                      setSearchParams(searchParams);
                     } else {
                       setSearchParams({ category: e.target.value });
                     }
                   }}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-500"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 >
                   <option value="all">All Categories</option>
                   {itemCategories.map(cat => (
-                    <option key={cat.id} value={cat.id}>{cat.name}</option>
+                    <option key={cat.id} value={cat.id}>
+                      {cat.name}
+                    </option>
                   ))}
                 </select>
               </div>
 
               {/* Location Dropdown */}
-              <div className="flex items-center gap-2">
-                <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Campus Zone:</span>
+              <div className="w-full sm:w-auto">
                 <select
                   value={selectedLocation}
                   onChange={(e) => setSelectedLocation(e.target.value)}
-                  className="px-3 py-1.5 rounded-xl border border-slate-300 text-xs font-medium bg-slate-50 focus:bg-white focus:outline-none focus:border-teal-500 max-w-[220px] truncate"
+                  className="w-full sm:w-auto px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-teal-500/20 focus:border-teal-500"
                 >
                   <option value="all">All Campus Locations</option>
                   {campusLocations.map(loc => (
-                    <option key={loc} value={loc}>{loc}</option>
+                    <option key={loc} value={loc}>
+                      {loc}
+                    </option>
                   ))}
                 </select>
               </div>
@@ -197,7 +216,7 @@ export default function BrowseItemsPage() {
             {(selectedType !== 'all' || selectedCategory !== 'all' || selectedLocation !== 'all' || searchQuery) && (
               <button
                 onClick={handleResetFilters}
-                className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors ml-auto sm:ml-0"
+                className="text-xs font-semibold text-rose-600 hover:text-rose-700 flex items-center gap-1 transition-colors ml-auto sm:ml-0 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Clear All Filters
@@ -207,42 +226,83 @@ export default function BrowseItemsPage() {
 
         </div>
 
-        {/* Results Counter */}
+        {/* Results Counter & DB Indicator */}
         <div className="mb-6 flex items-center justify-between text-xs text-slate-500 font-medium">
-          <span>Showing {filtered.length} matching reports</span>
-          <span>Updated in real time via LocalStorage</span>
+          <span>Showing {items.length} matching reports ({totalCount} total in database)</span>
+          <span className="inline-flex items-center gap-1.5 text-teal-700 bg-teal-50 px-2.5 py-0.5 rounded-full border border-teal-200/60 font-semibold">
+            <Database className="w-3 h-3 text-teal-600" />
+            MongoDB Atlas Live Source of Truth
+          </span>
         </div>
 
-        {/* Items Grid */}
-        {filtered.length === 0 ? (
+        {/* Error Banner with Retry */}
+        {errorMessage && (
+          <div className="mb-8 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 text-xs flex items-center justify-between gap-4">
+            <div className="flex items-center gap-2.5">
+              <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>{errorMessage}</span>
+            </div>
+            <button
+              onClick={loadReports}
+              className="px-3 py-1.5 rounded-lg bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs shrink-0 cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
+
+        {/* Loading Spinner */}
+        {isLoading ? (
+          <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm flex flex-col items-center justify-center">
+            <Loader2 className="w-8 h-8 text-teal-600 animate-spin mb-3" />
+            <h3 className="text-sm font-bold text-slate-700">Connecting to MongoDB Atlas...</h3>
+            <p className="text-xs text-slate-400 mt-1">Retrieving latest university reports</p>
+          </div>
+        ) : items.length === 0 ? (
+          /* Empty State */
           <div className="bg-white rounded-3xl p-16 text-center border border-slate-200 shadow-sm">
             <div className="w-16 h-16 rounded-2xl bg-slate-100 flex items-center justify-center text-slate-400 mx-auto mb-4">
               <Inbox className="w-8 h-8" />
             </div>
-            <h3 className="text-lg font-bold text-slate-800">No items match your criteria</h3>
+            <h3 className="text-lg font-bold text-slate-800">
+              {searchQuery || selectedType !== 'all' || selectedCategory !== 'all' || selectedLocation !== 'all'
+                ? 'No items match your criteria'
+                : 'No Belongings Reported Yet'}
+            </h3>
             <p className="text-sm text-slate-500 mt-1 max-w-md mx-auto">
-              Try removing some filters or searching for alternate keywords. If you lost an item recently, feel free to file a report now.
+              {searchQuery || selectedType !== 'all' || selectedCategory !== 'all' || selectedLocation !== 'all'
+                ? 'Try removing some filters or searching for alternate keywords.'
+                : 'CampusFind is initialized with a fresh MongoDB Atlas database. Newly submitted Lost & Found reports will appear here in real time.'}
             </p>
             <div className="mt-6 flex items-center justify-center gap-3">
-              <button
-                onClick={handleResetFilters}
-                className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50"
-              >
-                Reset Filters
-              </button>
+              {(searchQuery || selectedType !== 'all' || selectedCategory !== 'all' || selectedLocation !== 'all') && (
+                <button
+                  onClick={handleResetFilters}
+                  className="px-5 py-2.5 rounded-xl border border-slate-300 text-xs font-bold text-slate-700 hover:bg-slate-50 cursor-pointer"
+                >
+                  Reset Filters
+                </button>
+              )}
               <Link
                 to="/report-lost"
                 className="px-5 py-2.5 rounded-xl bg-rose-600 text-white text-xs font-bold hover:bg-rose-500 shadow-sm"
               >
                 Report Lost Item
               </Link>
+              <Link
+                to="/report-found"
+                className="px-5 py-2.5 rounded-xl bg-[#0E7490] hover:bg-[#09576c] text-white text-xs font-bold shadow-sm"
+              >
+                Report Found Item
+              </Link>
             </div>
           </div>
         ) : (
+          /* Items Grid */
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filtered.map(item => (
+            {items.map(item => (
               <ItemCard
-                key={item.id}
+                key={item.token || item.id}
                 item={item}
                 onSelect={(selected) => setActiveModalItem(selected)}
               />
@@ -258,7 +318,7 @@ export default function BrowseItemsPage() {
           item={activeModalItem}
           onClose={() => setActiveModalItem(null)}
           onUpdate={(updated) => {
-            setItems(getStoredReports());
+            loadReports();
             setActiveModalItem(updated);
           }}
         />

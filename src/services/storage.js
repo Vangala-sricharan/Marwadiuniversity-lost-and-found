@@ -14,6 +14,27 @@ import { generateSubmissionToken, formatDisplayDateTime } from '../utils/tokenGe
 
 const STORAGE_KEY = 'campusfind_reports_v2';
 const LEGACY_STORAGE_KEY = 'campusfind_reports_v1';
+export const FINDER_STORAGE_KEY = 'campusfind_finder_submissions_v1';
+
+/**
+ * Validates Marwadi University institutional email address
+ * Must strictly end with @marwadiuniversity.ac.in (case-insensitive, trimmed)
+ */
+export const isValidMUEmail = (email) => {
+  if (!email || typeof email !== 'string') return false;
+  const clean = email.trim().toLowerCase();
+  return /^[a-z0-9._%+-]+@marwadiuniversity\.ac\.in$/.test(clean);
+};
+
+/**
+ * Validates Marwadi University GR Number
+ * Must contain exactly 6 numeric digits
+ */
+export const isValidGRNumber = (gr) => {
+  if (!gr) return false;
+  const clean = String(gr).trim();
+  return /^\d{6}$/.test(clean);
+};
 
 // Seed sample reports mapped with valid 12-digit tokens matching their timestamps
 export const initialSampleReports = [
@@ -23,6 +44,9 @@ export const initialSampleReports = [
     reportType: 'lost',
     type: 'lost',
     studentName: 'Aarav Patel',
+    grNumber: '135062',
+    email: 'aarav.patel12@marwadiuniversity.ac.in',
+    contact: '+91 98765 43210',
     itemName: 'Blue Dell Inspiron Laptop Sleeve with Charger',
     category: 'electronics',
     description: 'Navy blue padded case containing a 65W Dell USB-C barrel charger and a wireless mouse. Left on a desk after DBMS lecture.',
@@ -30,8 +54,6 @@ export const initialSampleReports = [
     specificSpot: 'Lab 402, 3rd row workstation',
     date: '2026-10-28',
     approximateTime: '02:30 PM',
-    contact: '+91 98765 43210',
-    email: 'aarav.patel12@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.electronics,
     status: 'Submitted',
     createdAt: '2026-10-28T14:35:00.000Z',
@@ -52,6 +74,9 @@ export const initialSampleReports = [
     reportType: 'found',
     type: 'found',
     studentName: 'Pooja Joshi',
+    grNumber: '142890',
+    email: 'pooja.j@marwadiuniversity.ac.in',
+    contact: '+91 97123 45678',
     itemName: 'Marwadi University Student ID Card (B.Tech CSE)',
     category: 'idCards',
     description: 'RFID smart card bearing roll number 92300104. Found on the canteen billing counter after lunch rush.',
@@ -59,8 +84,6 @@ export const initialSampleReports = [
     specificSpot: 'Near Juice and Snacks counter',
     date: '2026-10-29',
     approximateTime: '01:15 PM',
-    contact: '+91 97123 45678',
-    email: 'pooja.j@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.idCards,
     status: 'Under Verification',
     createdAt: '2026-10-29T13:20:00.000Z',
@@ -86,6 +109,9 @@ export const initialSampleReports = [
     reportType: 'lost',
     type: 'lost',
     studentName: 'Devansh Shah',
+    grNumber: '158204',
+    email: 'devansh.s@marwadiuniversity.ac.in',
+    contact: 'devansh.s@marwadiuniversity.ac.in',
     itemName: 'Scientific Calculator Casio fx-991EX',
     category: 'booksStationery',
     description: 'Black and white ClassWiz calculator with a small neon green sticker on the back casing. Misplaced during engineering math tutorial.',
@@ -93,8 +119,6 @@ export const initialSampleReports = [
     specificSpot: 'Room E-204, front bench',
     date: '2026-10-29',
     approximateTime: '11:00 AM',
-    contact: 'devansh.s@marwadiuniversity.ac.in',
-    email: 'devansh.s@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.booksStationery,
     status: 'Submitted',
     createdAt: '2026-10-29T11:45:00.000Z',
@@ -115,6 +139,9 @@ export const initialSampleReports = [
     reportType: 'found',
     type: 'found',
     studentName: 'Vikramsinh Jadeja',
+    grNumber: '139115',
+    email: 'security.office@marwadiuniversity.ac.in',
+    contact: '+91 94280 11223',
     itemName: 'Honda Two-Wheeler Key with Leather Keychain',
     category: 'keysAccess',
     description: 'Single black ignition key with a dark brown braided leather tag and small brass carabiner.',
@@ -122,8 +149,6 @@ export const initialSampleReports = [
     specificSpot: 'Near Two-Wheeler Bay Section C',
     date: '2026-10-30',
     approximateTime: '09:10 AM',
-    contact: '+91 94280 11223',
-    email: 'security.office@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.keysAccess,
     status: 'Recovered',
     createdAt: '2026-10-30T09:10:00.000Z',
@@ -154,6 +179,9 @@ export const initialSampleReports = [
     reportType: 'lost',
     type: 'lost',
     studentName: 'Rhea Fernandes',
+    grNumber: '146733',
+    email: 'rhea.f@marwadiuniversity.ac.in',
+    contact: '+91 98200 99887',
     itemName: 'Ray-Ban Wayfarer Prescription Glasses in Black Case',
     category: 'personalItems',
     description: 'Matte black frames in a hard leather snap case. Left on an amphitheatre bench during the cultural club orientation.',
@@ -161,8 +189,6 @@ export const initialSampleReports = [
     specificSpot: 'Middle tier steps facing the stage',
     date: '2026-10-27',
     approximateTime: '05:45 PM',
-    contact: '+91 98200 99887',
-    email: 'rhea.f@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.personalItems,
     status: 'Submitted',
     createdAt: '2026-10-27T17:45:00.000Z',
@@ -183,6 +209,9 @@ export const initialSampleReports = [
     reportType: 'found',
     type: 'found',
     studentName: 'Sanjay Rawal',
+    grNumber: '151408',
+    email: 'library.desk@marwadiuniversity.ac.in',
+    contact: '+91 99090 33445',
     itemName: 'Wildcraft Charcoal Grey Water Bottle (750ml)',
     category: 'personalItems',
     description: 'Stainless steel insulated flask with sipper lid. Found on a study desk on the 2nd floor library.',
@@ -190,8 +219,6 @@ export const initialSampleReports = [
     specificSpot: '2nd Floor Quiet Zone, Table #14',
     date: '2026-10-30',
     approximateTime: '10:30 AM',
-    contact: '+91 99090 33445',
-    email: 'library.desk@marwadiuniversity.ac.in',
     imageUrl: imageAssets.categories.personalItems,
     status: 'Submitted',
     createdAt: '2026-10-30T10:30:00.000Z',
@@ -219,10 +246,18 @@ export const normalizeReport = (report) => {
   const createdAt = report.createdAt || report.submittedAt || new Date().toISOString();
   let status = report.status || 'Submitted';
 
+  const validStatuses = [
+    'Submitted', 
+    'Finder Information Submitted', 
+    'Under Verification', 
+    'Recovered', 
+    'Closed'
+  ];
+
   // Map legacy status if any
   if (status === 'Found / Ready for Claim') {
     status = 'Recovered';
-  } else if (!['Submitted', 'Under Verification', 'Recovered', 'Closed'].includes(status)) {
+  } else if (!validStatuses.includes(status)) {
     status = 'Submitted';
   }
 
@@ -237,6 +272,9 @@ export const normalizeReport = (report) => {
 
   return {
     ...report,
+    grNumber: report.grNumber || '',
+    email: report.email || '',
+    finderSubmission: report.finderSubmission || null,
     status,
     createdAt,
     submittedAt: report.submittedAt || createdAt,
@@ -257,6 +295,12 @@ export const validateReportData = (data) => {
   if (!data.studentName || !data.studentName.trim()) {
     throw new Error('Student name is required.');
   }
+  if (!data.grNumber || !isValidGRNumber(data.grNumber)) {
+    throw new Error('GR Number must be exactly 6 digits.');
+  }
+  if (!data.email || !isValidMUEmail(data.email)) {
+    throw new Error('Please enter your valid Marwadi University email ID ending with @marwadiuniversity.ac.in.');
+  }
   if (!data.itemName || !data.itemName.trim()) {
     throw new Error('Item name is required.');
   }
@@ -274,9 +318,6 @@ export const validateReportData = (data) => {
   }
   if (!data.approximateTime || !data.approximateTime.trim()) {
     throw new Error('Approximate time is required.');
-  }
-  if (!data.contact || !data.contact.trim()) {
-    throw new Error('Contact phone or email is required.');
   }
 };
 
@@ -374,6 +415,9 @@ export const saveNewReport = (reportData) => {
     reportType,
     type: reportType,
     studentName: sanitizeText(reportData.studentName),
+    grNumber: sanitizeText(reportData.grNumber),
+    email: sanitizeText(reportData.email),
+    contact: sanitizeText(reportData.contact || reportData.email),
     itemName: sanitizeText(reportData.itemName),
     category: reportData.category,
     description: sanitizeText(reportData.description),
@@ -383,8 +427,6 @@ export const saveNewReport = (reportData) => {
     specificSpot: sanitizeText(reportData.specificSpot || ''),
     date: reportData.date.trim(),
     approximateTime: sanitizeText(reportData.approximateTime),
-    contact: sanitizeText(reportData.contact),
-    email: reportData.contact.includes('@') ? sanitizeText(reportData.contact) : '',
     imageUrl: reportData.imageUrl || '',
     status: 'Submitted', // Requirement: Initial status must be "Submitted"
     submittedAt: nowIso,
@@ -414,7 +456,7 @@ export const saveNewReport = (reportData) => {
 
 /**
  * Updates a report's status in LocalStorage with audit history for prototype demonstration
- * Valid stages: 'Submitted', 'Under Verification', 'Recovered', 'Closed'
+ * Valid stages: 'Submitted', 'Finder Information Submitted', 'Under Verification', 'Recovered', 'Closed'
  *
  * @param {string} token
  * @param {string} newStage
@@ -422,7 +464,13 @@ export const saveNewReport = (reportData) => {
  * @returns {Object} Updated report
  */
 export const updateReportStatus = (token, newStage, customNote = '') => {
-  const validStages = ['Submitted', 'Under Verification', 'Recovered', 'Closed'];
+  const validStages = [
+    'Submitted', 
+    'Finder Information Submitted', 
+    'Under Verification', 
+    'Recovered', 
+    'Closed'
+  ];
   if (!validStages.includes(newStage)) {
     throw new Error(`Invalid stage: ${newStage}. Expected one of: ${validStages.join(', ')}`);
   }
@@ -462,6 +510,142 @@ export const updateReportStatus = (token, newStage, customNote = '') => {
   }
 
   return updatedReport;
+};
+
+/**
+ * Retrieves all finder submissions from LocalStorage
+ * @returns {Array} List of finder submission records
+ */
+export const getStoredFinderSubmissions = () => {
+  try {
+    const raw = localStorage.getItem(FINDER_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (err) {
+    console.error('Failed reading finder submissions from localStorage:', err);
+    return [];
+  }
+};
+
+/**
+ * Retrieves finder submission linked to a specific token or report id
+ * @param {string} token
+ * @returns {Object|null}
+ */
+export const getFinderSubmissionByToken = (token) => {
+  if (!token) return null;
+  const clean = String(token).trim();
+  const list = getStoredFinderSubmissions();
+  return list.find(s => s.originalToken === clean || s.originalReportId === clean) || null;
+};
+
+/**
+ * Submits finder information for a scanned QR report.
+ * - Stores linked finder record
+ * - Updates report status to "Finder Information Submitted"
+ * - Appends history entry
+ * - Prevents duplicate submissions
+ *
+ * @param {string} token
+ * @param {Object} finderData { finderName, finderEmail, finderGrNumber, foundLocation, customLocation }
+ * @returns {Object} { updatedReport, submissionRecord }
+ */
+export const submitFinderInformation = (token, finderData) => {
+  if (!token) {
+    throw new Error('Registration token is required.');
+  }
+  const cleanToken = String(token).trim();
+
+  // 1. Locate the report
+  const reports = getStoredReports();
+  const index = reports.findIndex(r => r.token === cleanToken || r.id === cleanToken);
+  if (index === -1) {
+    throw new Error('Report not found with this registration token.');
+  }
+
+  const existingReport = normalizeReport(reports[index]);
+
+  // 2. Duplicate submission prevention check
+  const existingSubmissions = getStoredFinderSubmissions();
+  const alreadySubmitted = existingSubmissions.some(
+    s => s.originalToken === cleanToken || s.originalReportId === cleanToken
+  ) || existingReport.finderSubmission;
+
+  if (alreadySubmitted) {
+    throw new Error('Finder information has already been submitted for this item report. Please visit MB315, Marwadi University, for further assistance.');
+  }
+
+  // 3. Validate Finder Information Fields
+  const finderName = sanitizeText(finderData.finderName || '');
+  if (!finderName || finderName.length < 2) {
+    throw new Error('Finder full name is required (minimum 2 characters).');
+  }
+
+  const finderEmail = String(finderData.finderEmail || '').trim();
+  if (!isValidMUEmail(finderEmail)) {
+    throw new Error('Please enter your valid Marwadi University email ID ending with @marwadiuniversity.ac.in.');
+  }
+
+  const finderGrNumber = String(finderData.finderGrNumber || '').trim();
+  if (!isValidGRNumber(finderGrNumber)) {
+    throw new Error('GR Number must be exactly 6 digits.');
+  }
+
+  const effectiveLocation = finderData.foundLocation === 'Other' && finderData.customLocation
+    ? `Other: ${sanitizeText(finderData.customLocation)}`
+    : sanitizeText(finderData.foundLocation || '');
+
+  if (!effectiveLocation) {
+    throw new Error('Please select or specify the place where the item was found.');
+  }
+
+  const now = new Date();
+  const nowIso = now.toISOString();
+
+  const submissionRecord = {
+    id: `FND_${cleanToken}_${Date.now()}`,
+    originalReportId: existingReport.id || cleanToken,
+    originalToken: cleanToken,
+    originalItemName: existingReport.itemName,
+    originalReportType: existingReport.reportType || existingReport.type || 'lost',
+    finderName,
+    finderEmail,
+    finderGrNumber,
+    foundLocation: effectiveLocation,
+    customLocation: sanitizeText(finderData.customLocation || ''),
+    submissionTimestamp: nowIso,
+    formattedSubmissionDate: formatDisplayDateTime(now),
+    recoveryStatus: 'Finder Information Submitted'
+  };
+
+  // 4. Update Report Status and Append Timeline Entry
+  const updatedHistory = [
+    ...(existingReport.history || []),
+    {
+      stage: 'Finder Information Submitted',
+      timestamp: nowIso,
+      note: `Finder information recorded by ${finderName} (GR: ${finderGrNumber}) at ${effectiveLocation}.`
+    }
+  ];
+
+  const updatedReport = {
+    ...existingReport,
+    status: 'Finder Information Submitted',
+    finderSubmission: submissionRecord,
+    updatedAt: nowIso,
+    history: updatedHistory
+  };
+
+  reports[index] = updatedReport;
+
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(reports));
+    localStorage.setItem(FINDER_STORAGE_KEY, JSON.stringify([submissionRecord, ...existingSubmissions]));
+  } catch (err) {
+    console.error('Failed saving finder submission to localStorage:', err);
+    throw new Error('Failed to save finder information to browser storage. Please try again.');
+  }
+
+  return { updatedReport, submissionRecord };
 };
 
 /**

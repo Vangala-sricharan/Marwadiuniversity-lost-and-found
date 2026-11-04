@@ -2,24 +2,25 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { 
   MapPin, 
-  Phone, 
-  Mail, 
   Clock, 
   ShieldCheck, 
-  AlertCircle,
   HelpCircle,
   FileText,
   Building2,
   Lock,
   Cookie,
-  MessageSquare
+  MessageSquare,
+  Compass,
+  Search,
+  Zap,
+  ArrowRight
 } from 'lucide-react';
 import { imageAssets } from '../config/imageAssets';
 import { openCookieModal } from '../services/consentService';
 
 export default function Footer() {
   return (
-    <footer className="bg-[#091426] text-slate-300 border-t border-slate-800">
+    <footer className="bg-[#091426] text-slate-300 border-t border-slate-800 w-full">
       {/* Top Banner / Helpdesk Bar */}
       <div className="border-b border-slate-800/80 bg-[#0B1A30]">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-5">
@@ -70,11 +71,11 @@ export default function Footer() {
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
               <img 
-                src={imageAssets.logo.campusFind} 
+                src={imageAssets.logo.campusFindWhite || imageAssets.logo.campusFind} 
                 alt="CampusFind Logo" 
-                className="h-10 w-auto object-contain"
+                className="h-9 w-auto object-contain"
                 onError={(e) => {
-                  e.currentTarget.src = '/images/logo/campusfind-logo.svg';
+                  e.currentTarget.src = '/images/logo/campusfind-logo-white.svg';
                 }}
               />
             </div>
@@ -99,7 +100,7 @@ export default function Footer() {
             </div>
           </div>
 
-          {/* Required Quick Navigation Links */}
+          {/* Required Quick Navigation Links (Same-tab navigation) */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Portal Navigation</h3>
             <ul className="space-y-2.5 text-xs sm:text-sm">
@@ -114,18 +115,28 @@ export default function Footer() {
                 </Link>
               </li>
               <li>
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
+                  Campus Landmarks &amp; Gallery
+                </Link>
+              </li>
+              <li>
+                <Link to="/how-it-works" className="text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5">
+                  How It Works
+                </Link>
+              </li>
+              <li>
                 <Link to="/report-lost" className="text-slate-400 hover:text-rose-400 transition-colors flex items-center gap-1.5">
-                  Report Lost
+                  Report Lost Item
                 </Link>
               </li>
               <li>
                 <Link to="/report-found" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
-                  Report Found
+                  Report Found Item
                 </Link>
               </li>
               <li>
                 <Link to="/track" className="text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-                  Track Report
+                  Track by Token
                 </Link>
               </li>
               <li>
@@ -138,56 +149,42 @@ export default function Footer() {
                   FAQs
                 </Link>
               </li>
-              <li>
-                <Link to="/terms" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
-                  Terms &amp; Conditions
-                </Link>
-              </li>
-              <li>
-                <Link to="/privacy" className="text-slate-400 hover:text-cyan-400 transition-colors flex items-center gap-1.5">
-                  Privacy Policy
-                </Link>
-              </li>
-              <li>
-                <Link to="/feedback" className="text-slate-400 hover:text-teal-400 transition-colors flex items-center gap-1.5">
-                  Student Feedback
-                </Link>
-              </li>
             </ul>
           </div>
 
-          {/* Campus Landmarks */}
+          {/* Campus Landmarks Column */}
           <div>
             <h3 className="text-xs font-bold uppercase tracking-wider text-white mb-4">Campus Zones</h3>
             <ul className="space-y-2.5 text-xs sm:text-sm">
               <li>
-                <a href="/#campus-showcase" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-white transition-colors">
                   Main Academic Tower (MB)
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#campus-showcase" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-white transition-colors">
                   Central University Library
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#campus-showcase" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-white transition-colors">
                   PG &amp; Research Complex
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#campus-showcase" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-white transition-colors">
                   Food Court &amp; Canteen
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="/#campus-gallery" className="text-slate-400 hover:text-white transition-colors">
+                <Link to="/campus-landmarks" className="text-slate-400 hover:text-white transition-colors">
                   Campus Photo Gallery (30+)
-                </a>
+                </Link>
               </li>
               <li className="pt-1">
-                <Link to="/campus-guide" className="text-teal-400 hover:text-teal-300 transition-colors font-medium">
-                  Collection Desks Guide &rarr;
+                <Link to="/campus-guide" className="text-teal-400 hover:text-teal-300 transition-colors font-medium flex items-center gap-1">
+                  <span>Collection Desks Guide</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
                 </Link>
               </li>
             </ul>
@@ -215,7 +212,7 @@ export default function Footer() {
               <button
                 type="button"
                 onClick={openCookieModal}
-                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors"
+                className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-medium transition-colors cursor-pointer"
               >
                 <Cookie className="w-3.5 h-3.5 text-teal-400" />
                 <span>Cookie Settings</span>
@@ -274,4 +271,3 @@ export default function Footer() {
     </footer>
   );
 }
-

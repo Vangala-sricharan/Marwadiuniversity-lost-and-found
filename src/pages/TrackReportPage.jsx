@@ -19,21 +19,28 @@ import {
   Info,
   Calendar,
   Sparkles,
-  ChevronRight
+  ChevronRight,
+  PackageCheck
 } from 'lucide-react';
-import { getReportByToken, updateReportStatus } from '../services/storage';
+import { fetchReportByToken, updateReportStatusApi } from '../services/api';
 import { isValidTokenFormat } from '../utils/tokenGenerator';
 import { imageAssets } from '../config/imageAssets';
 import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
 import MarkAsFoundModal from '../components/MarkAsFoundModal';
 
-// 4-stage lifecycle timeline definition
+// Campus verification & recovery timeline definition
 const TIMELINE_STAGES = [
   {
     key: 'Submitted',
     label: 'Submitted',
     shortDesc: 'Report logged in portal',
     icon: FileText,
+  },
+  {
+    key: 'Finder Information Submitted',
+    label: 'Finder Info Submitted',
+    shortDesc: 'Found info logged via QR',
+    icon: PackageCheck,
   },
   {
     key: 'Under Verification',
@@ -61,12 +68,14 @@ export default function TrackReportPage() {
 
   const [inputToken, setInputToken] = useState(queryToken);
   const [report, setReport] = useState(null);
+  const [finderSubmissions, setFinderSubmissions] = useState([]);
   const [searched, setSearched] = useState(false);
   const [copied, setCopied] = useState(false);
   const [validationError, setValidationError] = useState('');
   const [showQRModal, setShowQRModal] = useState(false);
   const [showMarkFoundModal, setShowMarkFoundModal] = useState(false);
   const [demoNotice, setDemoNotice] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
   // Auto-search if token is present in URL
   useEffect(() => {
@@ -76,7 +85,7 @@ export default function TrackReportPage() {
     }
   }, [queryToken]);
 
-  const executeSearch = (tokenToSearch) => {
+  const executeSearch = async (tokenToSearch) => {
     const clean = tokenToSearch.trim();
     setValidationError('');
     setDemoNotice('');
@@ -84,6 +93,7 @@ export default function TrackReportPage() {
     if (!clean) {
       setValidationError('Please enter your 12-digit registration token.');
       setReport(null);
+      setFinderSubmissions([]);
       setSearched(false);
       return;
     }
@@ -91,13 +101,25 @@ export default function TrackReportPage() {
     if (!isValidTokenFormat(clean)) {
       setValidationError('Registration token must be exactly 12 digits (format: DDMMYYYYHHmm).');
       setReport(null);
+      setFinderSubmissions([]);
       setSearched(true);
       return;
     }
 
-    const found = getReportByToken(clean);
-    setReport(found);
-    setSearched(true);
+    setIsSearching(true);
+    try {
+      const data = await fetchReportByToken(clean);
+      setReport(data.report);
+      setFinderSubmissions(data.finderSubmissions || []);
+      setSearched(true);
+    } catch (err) {
+      setReport(null);
+      setFinderSubmissions([]);
+      setSearched(true);
+      // "No report found with this registration token. Please check your token and try again."
+    } finally {
+      setIsSearching(false);
+    }
   };
 
   const handleSubmit = (e) => {
@@ -113,16 +135,16 @@ export default function TrackReportPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
-  const handleStageDemoChange = (newStage) => {
+  const handleStageDemoChange = async (newStage) => {
     if (!report?.token) return;
     try {
-      const updated = updateReportStatus(
+      const updated = await updateReportStatusApi(
         report.token, 
         newStage, 
-        `Demonstration update: stage moved to ${newStage} in browser storage.`
+        `Stage updated to ${newStage} in MongoDB Atlas database.`
       );
       setReport(updated);
-      setDemoNotice(`Timeline stage updated to "${newStage}" for prototype evaluation.`);
+      setDemoNotice(`Timeline stage updated to "${newStage}" in MongoDB Atlas.`);
       setTimeout(() => setDemoNotice(''), 3500);
     } catch (err) {
       console.error('Failed to change stage:', err);
@@ -307,20 +329,24 @@ export default function TrackReportPage() {
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider ${
                         report.status === 'Recovered' 
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                          : report.status === 'Under Verification'
-                            ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                            : report.status === 'Closed'
-                              ? 'bg-slate-200 text-slate-800 border border-slate-300'
-                              : 'bg-blue-100 text-blue-800 border border-blue-200'
+                          : report.status === 'Finder Information Submitted'
+                            ? 'bg-teal-100 text-teal-800 border border-teal-300'
+                            : report.status === 'Under Verification'
+                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                              : report.status === 'Closed'
+                                ? 'bg-slate-200 text-slate-800 border border-slate-300'
+                                : 'bg-blue-100 text-blue-800 border border-blue-200'
                       }`}>
                         <span className={`w-2 h-2 rounded-full ${
                           report.status === 'Recovered'
                             ? 'bg-emerald-500'
-                            : report.status === 'Under Verification'
-                              ? 'bg-amber-500 animate-pulse'
-                              : report.status === 'Closed'
-                                ? 'bg-slate-500'
-                                : 'bg-blue-500 animate-pulse'
+                            : report.status === 'Finder Information Submitted'
+                              ? 'bg-teal-500 animate-pulse'
+                              : report.status === 'Under Verification'
+                                ? 'bg-amber-500 animate-pulse'
+                                : report.status === 'Closed'
+                                  ? 'bg-slate-500'
+                                  : 'bg-blue-500 animate-pulse'
                         }`}></span>
                         {report.status || 'Submitted'}
                       </span>
@@ -328,7 +354,7 @@ export default function TrackReportPage() {
                   </div>
                 </div>
 
-                {/* 4-STAGE REPORT STATUS TIMELINE (FEATURE TWO) */}
+                {/* 5-STAGE REPORT STATUS TIMELINE */}
                 <div className="p-6 sm:p-8 bg-slate-50/70 border-b border-slate-200/80">
                   <div className="flex items-center justify-between mb-6">
                     <div>
@@ -337,16 +363,16 @@ export default function TrackReportPage() {
                         Report Status Lifecycle Timeline
                       </h3>
                       <p className="text-xs text-slate-500 mt-0.5">
-                        4-stage campus verification and custody pipeline
+                        Campus verification and recovery pipeline
                       </p>
                     </div>
                     <span className="text-xs font-semibold text-teal-800 bg-teal-50 border border-teal-200 px-2.5 py-1 rounded-lg">
-                      Stage {currentStageIdx + 1} of 4
+                      Stage {currentStageIdx + 1} of {TIMELINE_STAGES.length}
                     </span>
                   </div>
 
                   {/* Visual Stepper Bar */}
-                  <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 relative">
+                  <div className="grid grid-cols-1 sm:grid-cols-5 gap-3 relative">
                     {TIMELINE_STAGES.map((stage, idx) => {
                       const StageIcon = stage.icon;
                       const isCompleted = idx < currentStageIdx;
@@ -543,13 +569,54 @@ export default function TrackReportPage() {
 
                     <div>
                       <span className="text-slate-400 uppercase tracking-wider font-bold block mb-1">
-                        Student Name
+                        Student Identification
                       </span>
-                      <span className="text-sm font-semibold text-slate-900">
+                      <span className="text-sm font-semibold text-slate-900 block">
                         {report.studentName}
                       </span>
+                      {report.grNumber && (
+                        <span className="text-xs text-teal-700 font-mono font-bold block mt-0.5">
+                          GR Number: {report.grNumber}
+                        </span>
+                      )}
                     </div>
                   </div>
+
+                  {/* QR Finder Submission Banner if Finder Information was logged via QR */}
+                  {report.finderSubmission && (
+                    <div className="bg-teal-50/90 border-2 border-teal-300 rounded-2xl p-5 space-y-3 animate-in fade-in">
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                        <div className="flex items-center gap-2 text-teal-950 font-bold text-sm">
+                          <PackageCheck className="w-5 h-5 text-teal-700 shrink-0" />
+                          <span>QR Finder Information Logged</span>
+                        </div>
+                        <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-teal-200 text-teal-950 text-xs font-bold w-fit">
+                          Stage: Finder Information Submitted
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs bg-white/90 p-4 rounded-xl border border-teal-100">
+                        <div>
+                          <span className="text-slate-500 block mb-0.5">Finder Full Name:</span>
+                          <span className="font-semibold text-slate-900">{report.finderSubmission.finderName}</span>
+                        </div>
+                        <div>
+                          <span className="text-slate-500 block mb-0.5">Finder GR Number:</span>
+                          <span className="font-semibold text-teal-800 font-mono">{report.finderSubmission.finderGrNumber}</span>
+                        </div>
+                        <div className="sm:col-span-2">
+                          <span className="text-slate-500 block mb-0.5">Campus Location Where Found:</span>
+                          <span className="font-semibold text-teal-950 flex items-center gap-1">
+                            <MapPin className="w-3.5 h-3.5 text-teal-600" />
+                            {report.finderSubmission.foundLocation}
+                          </span>
+                        </div>
+                        <div className="sm:col-span-2 text-[11px] text-slate-500 pt-1">
+                          Recorded on: {report.finderSubmission.formattedSubmissionDate || report.finderSubmission.submissionTimestamp}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Found / Recovery Notice Banner if Item Marked Found */}
                   {report.foundDetails && (

@@ -13,7 +13,7 @@ import {
   QrCode,
   Printer
 } from 'lucide-react';
-import { getReportByToken } from '../services/storage';
+import { fetchReportByToken } from '../services/api';
 import { imageAssets } from '../config/imageAssets';
 import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
 
@@ -28,22 +28,31 @@ export default function SubmissionSuccessPage() {
   const [showQRModal, setShowQRModal] = useState(false);
 
   useEffect(() => {
-    // 1. Try to get report from router state
+    // 1. Try to get report from router state (passed upon creation in MongoDB)
     if (location.state && location.state.report) {
       setReport(location.state.report);
       setLoading(false);
       return;
     }
 
-    // 2. Otherwise try to resolve from query param `?token=...`
+    // 2. Otherwise try to resolve from query param `?token=...` via MongoDB Atlas API
     const tokenParam = searchParams.get('token');
     if (tokenParam) {
-      const found = getReportByToken(tokenParam);
-      if (found) {
-        setReport(found);
-      }
+      fetchReportByToken(tokenParam)
+        .then((data) => {
+          if (data && data.report) {
+            setReport(data.report);
+          }
+        })
+        .catch((err) => {
+          console.error('Error fetching report in success page:', err);
+        })
+        .finally(() => {
+          setLoading(false);
+        });
+    } else {
+      setLoading(false);
     }
-    setLoading(false);
   }, [location.state, searchParams]);
 
   const handleCopyToken = () => {
@@ -215,6 +224,31 @@ export default function SubmissionSuccessPage() {
                     {report.formattedSubmissionDate || report.date}
                   </span>
                 </div>
+
+                <div>
+                  <span className="text-xs text-slate-400 block mb-0.5">Student / Reporter Name</span>
+                  <span className="font-semibold text-slate-800 block">
+                    {report.studentName}
+                  </span>
+                </div>
+
+                {report.grNumber && (
+                  <div>
+                    <span className="text-xs text-slate-400 block mb-0.5">Verified GR Number</span>
+                    <span className="font-mono font-bold text-teal-700 block">
+                      {report.grNumber}
+                    </span>
+                  </div>
+                )}
+
+                {report.email && (
+                  <div className="sm:col-span-2">
+                    <span className="text-xs text-slate-400 block mb-0.5">Institutional Email</span>
+                    <span className="font-medium text-slate-700 block">
+                      {report.email}
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
 
