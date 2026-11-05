@@ -36,7 +36,17 @@ function getStatusBadgeConfig(item) {
     };
   }
 
-  // 3. Handed Over to MB315 Desk (Emerald Green)
+  // 3. Under Verification (Indigo / Purple)
+  if (normStatus.includes('verification')) {
+    return {
+      label: 'Under Verification',
+      badgeClass: 'bg-indigo-50 text-indigo-800 border-indigo-300',
+      dotClass: 'bg-indigo-600 animate-pulse',
+      icon: ShieldCheck,
+    };
+  }
+
+  // 4. Handed Over to MB315 Desk (Emerald Green)
   if (isHandedOver) {
     return {
       label: 'At MB315 Desk',

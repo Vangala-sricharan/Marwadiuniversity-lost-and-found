@@ -128,7 +128,7 @@ export default function FeedbackPage() {
               Thank You for Your Feedback!
             </h2>
             <p className="text-slate-600 text-sm max-w-md mx-auto leading-relaxed">
-              Your evaluation has been successfully recorded in your browser&apos;s LocalStorage. This data helps demonstrate user engagement and frontend form workflows during academic review.
+              Your evaluation has been successfully recorded. This feedback helps improve the CampusFind user experience.
             </p>
 
             <div className="pt-4 flex flex-col sm:flex-row items-center justify-center gap-3">
@@ -296,7 +296,7 @@ export default function FeedbackPage() {
             {/* Submit Button */}
             <div className="pt-4 flex items-center justify-between border-t border-slate-100">
               <span className="text-[11px] text-slate-400">
-                Stored in client-side LocalStorage
+                All feedback is reviewed for quality improvement
               </span>
               <button
                 type="submit"

@@ -678,7 +678,7 @@ export default function QRRecoveryPage() {
 
               </div>
             ) : (
-              /* CASE 2: Invalid, Deleted, or Cross-Device Scan (LocalStorage boundary) */
+              /* CASE 2: Item Record Not Found or Unverified */
               <div className="space-y-6 animate-in fade-in duration-200">
                 
                 {/* EXACT REQUIRED MESSAGE */}
@@ -697,15 +697,12 @@ export default function QRRecoveryPage() {
                   </div>
                 </div>
 
-                {/* Honest explanation of client-side storage architecture */}
+                {/* Desk assistance instructions */}
                 <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200/90 text-xs text-slate-600 space-y-2">
                   <div className="flex items-center gap-2 font-bold text-slate-800">
                     <Info className="w-4 h-4 text-teal-600" />
-                    <span>Why is this record unavailable on your device?</span>
+                    <span>How to proceed with this item</span>
                   </div>
-                  <p className="leading-relaxed">
-                    CampusFind is a student-developed academic prototype. Submission records are stored client-side in the local browser storage of the student who submitted the report. Reports are not automatically synchronized to an institutional database or across separate devices.
-                  </p>
                   <p className="leading-relaxed text-slate-700 font-medium">
                     If you have located a misplaced belonging bearing this tag, please bring the item directly to <strong>MB315, Marwadi University</strong>. Campus coordinators will be able to verify and log the belonging.
                   </p>

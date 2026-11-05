@@ -52,12 +52,12 @@ export default function FAQPage() {
     {
       id: 7,
       question: 'Where is my report stored?',
-      answer: 'The current prototype stores reports in browser LocalStorage.',
+      answer: 'Your report is stored in the CampusFind portal registry associated with your unique 12-digit registration token.',
     },
     {
       id: 8,
       question: 'Can I access my report from another device?',
-      answer: 'Not currently. The prototype does not use centralized cloud storage, so reports do not automatically synchronize between devices.',
+      answer: 'Yes. You can access and track your report from any browser or device by entering your 12-digit registration token on the Track Report page.',
     },
     {
       id: 9,

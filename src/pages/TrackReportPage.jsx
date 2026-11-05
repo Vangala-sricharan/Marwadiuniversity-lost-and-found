@@ -28,7 +28,7 @@ import { imageAssets } from '../config/imageAssets';
 import PrintableQRCodeModal from '../components/PrintableQRCodeModal';
 import MarkAsFoundModal from '../components/MarkAsFoundModal';
 
-// Campus verification & recovery timeline definition
+// Campus verification & recovery timeline definition (5-stage progression)
 const TIMELINE_STAGES = [
   {
     key: 'Submitted',
@@ -37,7 +37,7 @@ const TIMELINE_STAGES = [
     icon: FileText,
   },
   {
-    key: 'Finder Information Submitted',
+    key: 'Finder Info Submitted',
     label: 'Finder Info Submitted',
     shortDesc: 'Found info logged via QR',
     icon: PackageCheck,
@@ -84,6 +84,27 @@ export default function TrackReportPage() {
       executeSearch(queryToken);
     }
   }, [queryToken]);
+
+  // Periodic refresh to smoothly reflect server-calculated 5-stage automatic progression
+  useEffect(() => {
+    if (!report?.token) return;
+    const isClosed = (report.status || '').toLowerCase().includes('close');
+    if (isClosed) return;
+    const isLost = report.reportType === 'lost' || report.type === 'lost';
+    if (!isLost) return;
+
+    const interval = setInterval(() => {
+      fetchReportByToken(report.token)
+        .then((data) => {
+          if (data?.report) {
+            setReport(data.report);
+          }
+        })
+        .catch(() => {});
+    }, 15000);
+
+    return () => clearInterval(interval);
+  }, [report?.token, report?.status, report?.reportType, report?.type]);
 
   const executeSearch = async (tokenToSearch) => {
     const clean = tokenToSearch.trim();
@@ -171,11 +192,14 @@ export default function TrackReportPage() {
     return `${contact.slice(0, 2)}***${contact.slice(-2)}`;
   };
 
-  // Determine numeric index of current status in timeline
+  // Determine numeric index of current status in 5-stage timeline
   const getCurrentStageIndex = (status) => {
-    const norm = status || 'Submitted';
-    const idx = TIMELINE_STAGES.findIndex(s => s.key.toLowerCase() === norm.toLowerCase());
-    return idx >= 0 ? idx : 0;
+    const norm = (status || 'Submitted').toLowerCase().trim();
+    if (norm.includes('close')) return 4;
+    if (norm.includes('recover')) return 3;
+    if (norm.includes('verification') || norm.includes('desk check')) return 2;
+    if (norm.includes('finder')) return 1;
+    return 0; // 'Submitted' or any initial state
   };
 
   const currentStageIdx = report ? getCurrentStageIndex(report.status) : 0;
@@ -194,7 +218,7 @@ export default function TrackReportPage() {
             Track Your Report
           </h1>
           <p className="mt-2.5 text-slate-600 text-sm sm:text-base leading-relaxed">
-            Enter your 12-digit registration token to verify your submission details, view physical recovery directions, and monitor the 4-stage status timeline.
+            Enter your 12-digit registration token to verify your submission details, view physical recovery directions, and monitor the 5-stage status timeline.
           </p>
         </div>
 
@@ -327,26 +351,26 @@ export default function TrackReportPage() {
                     <div className="flex items-center gap-2">
                       <span className="text-xs text-slate-500 uppercase font-semibold">Current Stage:</span>
                       <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-xl text-xs font-bold uppercase tracking-wider ${
-                        report.status === 'Recovered' 
+                        (report.status || '').toLowerCase().includes('recover')
                           ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' 
-                          : report.status === 'Finder Information Submitted'
+                          : (report.status || '').toLowerCase().includes('finder')
                             ? 'bg-teal-100 text-teal-800 border border-teal-300'
-                            : report.status === 'Under Verification'
-                              ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                              : report.status === 'Closed'
+                            : (report.status || '').toLowerCase().includes('verification')
+                              ? 'bg-indigo-100 text-indigo-800 border border-indigo-300'
+                              : (report.status || '').toLowerCase().includes('close')
                                 ? 'bg-slate-200 text-slate-800 border border-slate-300'
-                                : 'bg-blue-100 text-blue-800 border border-blue-200'
+                                : 'bg-amber-100 text-amber-800 border border-amber-300'
                       }`}>
                         <span className={`w-2 h-2 rounded-full ${
-                          report.status === 'Recovered'
+                          (report.status || '').toLowerCase().includes('recover')
                             ? 'bg-emerald-500'
-                            : report.status === 'Finder Information Submitted'
+                            : (report.status || '').toLowerCase().includes('finder')
                               ? 'bg-teal-500 animate-pulse'
-                              : report.status === 'Under Verification'
-                                ? 'bg-amber-500 animate-pulse'
-                                : report.status === 'Closed'
+                              : (report.status || '').toLowerCase().includes('verification')
+                                ? 'bg-indigo-500 animate-pulse'
+                                : (report.status || '').toLowerCase().includes('close')
                                   ? 'bg-slate-500'
-                                  : 'bg-blue-500 animate-pulse'
+                                  : 'bg-amber-500 animate-pulse'
                         }`}></span>
                         {report.status || 'Submitted'}
                       </span>
@@ -438,13 +462,13 @@ export default function TrackReportPage() {
                         Timeline Audit Trail
                       </span>
                       {report.history.map((h, i) => (
-                        <div key={i} className="flex items-start gap-2.5 py-1 border-b border-slate-100 last:border-b-0">
+                        <div key={i} className="flex items-start gap-2.5 py-1.5 border-b border-slate-100 last:border-b-0">
                           <span className="w-2 h-2 rounded-full bg-teal-500 mt-1.5 shrink-0"></span>
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center justify-between gap-2">
                               <span className="font-bold text-slate-800">{h.stage}</span>
                               <span className="text-[10px] text-slate-400 font-mono">
-                                {new Date(h.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                {new Date(h.timestamp).toLocaleDateString('en-GB', { day: '2-digit', month: 'short' })} • {new Date(h.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                               </span>
                             </div>
                             <p className="text-slate-600 text-[11px] mt-0.5">{h.note}</p>
@@ -453,19 +477,6 @@ export default function TrackReportPage() {
                       ))}
                     </div>
                   )}
-
-                  {/* Honest LocalStorage Prototype Notice */}
-                  <div className="mt-5 bg-blue-50/80 border border-blue-200/90 rounded-2xl p-4 text-xs text-blue-950 flex items-start gap-3">
-                    <Info className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
-                    <div className="space-y-1">
-                      <p className="font-bold text-blue-900">
-                        Browser LocalStorage Prototype Architecture
-                      </p>
-                      <p className="leading-relaxed text-blue-800 text-[11px]">
-                        CampusFind operates as an independent client-side prototype. Reports remain in &ldquo;Submitted&rdquo; status in your local browser session unless updated. No automated background cloud sync or fabricated administrative actions occur.
-                      </p>
-                    </div>
-                  </div>
 
                   {/* Prototype Demonstration Switcher (For Evaluation Testing) */}
                   <div className="mt-4 bg-white border border-slate-200 rounded-2xl p-4">

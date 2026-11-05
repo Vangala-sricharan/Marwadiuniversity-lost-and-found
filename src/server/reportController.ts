@@ -61,6 +61,142 @@ function sanitizeReport(report: any) {
   };
 }
 
+export interface AutoStageConfig {
+  elapsedMinutes: number;
+  stage: string;
+  note: string;
+}
+
+export const LOST_AUTO_STAGES: AutoStageConfig[] = [
+  { elapsedMinutes: 0, stage: 'Submitted', note: 'Report logged in portal' },
+  { elapsedMinutes: 5, stage: 'Finder Info Submitted', note: 'Found info logged via QR' },
+  { elapsedMinutes: 10, stage: 'Under Verification', note: 'Desk check at MB315' },
+  { elapsedMinutes: 15, stage: 'Recovered', note: 'Matched & ready for pickup' },
+  { elapsedMinutes: 20, stage: 'Closed', note: 'Handover complete' },
+];
+
+function matchesStage(historyStage: string, targetStage: string): boolean {
+  const h = (historyStage || '').toLowerCase().trim();
+  const t = (targetStage || '').toLowerCase().trim();
+  if (h === t) return true;
+
+  const isTargetFinder = t.includes('finder');
+  const isHistoryFinder = h.includes('finder');
+  if (isTargetFinder || isHistoryFinder) {
+    return isTargetFinder && isHistoryFinder;
+  }
+
+  const isTargetVerification = t.includes('verification');
+  const isHistoryVerification = h.includes('verification');
+  if (isTargetVerification || isHistoryVerification) {
+    return isTargetVerification && isHistoryVerification;
+  }
+
+  const isTargetRecovered = t.includes('recover');
+  const isHistoryRecovered = h.includes('recover');
+  if (isTargetRecovered || isHistoryRecovered) {
+    return isTargetRecovered && isHistoryRecovered;
+  }
+
+  const isTargetClosed = t.includes('close');
+  const isHistoryClosed = h.includes('close');
+  if (isTargetClosed || isHistoryClosed) {
+    return isTargetClosed && isHistoryClosed;
+  }
+
+  const isTargetInitial = t === 'submitted' || t.includes('pending');
+  const isHistoryInitial = h === 'submitted' || h.includes('pending');
+  if (isTargetInitial && isHistoryInitial) {
+    return true;
+  }
+
+  return false;
+}
+
+/**
+ * Calculates and persists 5-stage automatic progression for Lost reports.
+ * 25-minute total duration, exactly 5 minutes per stage.
+ * Cumulative elapsed times:
+ * 0m: Submitted
+ * 5m: Finder Info Submitted
+ * 10m: Under Verification
+ * 15m: Recovered
+ * 20m: Closed
+ * 25m+: Remains Closed
+ */
+export async function applyLostProgression(report: any, db?: Db): Promise<any> {
+  if (!report) return report;
+  const isLost = report.reportType === 'lost' || report.type === 'lost';
+  if (!isLost) return report;
+
+  const createdTime = new Date(report.createdAt || report.submittedAt || Date.now()).getTime();
+  if (isNaN(createdTime)) return report;
+
+  const now = Date.now();
+  const elapsedMinutes = Math.max(0, (now - createdTime) / (60 * 1000));
+
+  const eligibleStages = LOST_AUTO_STAGES.filter(s => elapsedMinutes >= s.elapsedMinutes);
+  if (eligibleStages.length === 0) return report;
+
+  if (!Array.isArray(report.history)) {
+    report.history = [];
+  }
+
+  let historyUpdated = false;
+
+  for (const stageConfig of eligibleStages) {
+    const alreadyRecorded = report.history.some((h: any) => 
+      matchesStage(h.stage, stageConfig.stage)
+    );
+
+    if (!alreadyRecorded) {
+      const stageTime = new Date(createdTime + stageConfig.elapsedMinutes * 60 * 1000).toISOString();
+      report.history.push({
+        stage: stageConfig.stage,
+        timestamp: stageTime,
+        note: stageConfig.note,
+      });
+      historyUpdated = true;
+    }
+  }
+
+  // Ensure chronological ordering of audit history
+  report.history.sort((a: any, b: any) => 
+    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
+  const latestEligible = eligibleStages[eligibleStages.length - 1];
+  let statusUpdated = false;
+
+  if (report.status !== latestEligible.stage) {
+    report.status = latestEligible.stage;
+    statusUpdated = true;
+  }
+
+  if (historyUpdated || statusUpdated) {
+    report.updatedAt = new Date().toISOString();
+
+    if (db && report._id) {
+      try {
+        await db.collection('reports').updateOne(
+          { _id: report._id },
+          {
+            $set: {
+              status: report.status,
+              history: report.history,
+              updatedAt: report.updatedAt,
+            },
+          }
+        );
+      } catch (persistErr) {
+        console.warn('Auto progression database persistence skipped or failed:', persistErr);
+      }
+    }
+  }
+
+  return report;
+}
+
 /**
  * Controller: Check Database Health
  */
@@ -157,15 +293,15 @@ export async function createReport(data: any) {
   const { token, submissionDate, formattedDate } = await generateUniqueToken(db);
 
   // Initial stage & audit history
-  const initialStatus = type === 'found' && handedToDesk 
-    ? 'Item Handed Over to MB315' 
-    : 'Pending Verification';
+  const initialStatus = type === 'found' 
+    ? (handedToDesk ? 'Item Handed Over to MB315' : 'Pending Verification')
+    : 'Submitted';
 
   const initialNote = type === 'found'
     ? (handedToDesk 
         ? 'Found item deposited at Demonstration Desk MB315. Verified record created.' 
         : 'Found item report registered in portal. Verification pending.')
-    : 'Lost item report registered in portal. Verification pending desk review.';
+    : 'Report logged in portal';
 
   const nowIso = submissionDate.toISOString();
 
@@ -263,6 +399,9 @@ export async function getReports(query: {
     .limit(limit)
     .toArray();
 
+  // Apply automatic 25-minute progression for lost reports
+  await Promise.all(rawReports.map(r => applyLostProgression(r, db)));
+
   const reports = rawReports.map(sanitizeReport);
   const totalPages = Math.ceil(total / limit) || 1;
 
@@ -290,6 +429,9 @@ export async function getReportByToken(token: string) {
   if (!report) {
     return null;
   }
+
+  // Apply automatic 25-minute progression for lost reports
+  await applyLostProgression(report, db);
 
   // Fetch linked finder submissions if any
   const finderSubmissions = await db

@@ -75,11 +75,11 @@ export default function CookieBanner({ onOpenCustomize }) {
                 Your Privacy Matters
               </h3>
               <span className="px-2 py-0.5 rounded-full text-[10px] font-semibold bg-teal-500/20 text-teal-300 border border-teal-500/30">
-                Client-Side Storage
+                Essential Preferences
               </span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              CampusFind uses essential browser storage (LocalStorage) to store your lost and found reports and tokens directly on your device. We do not use third-party analytics or advertising trackers.
+              CampusFind uses essential browser storage to preserve your legal consent and cookie preferences. We do not use third-party analytics or advertising trackers.
             </p>
           </div>
         </div>

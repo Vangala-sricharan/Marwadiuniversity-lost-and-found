@@ -413,14 +413,14 @@ export default function HelpPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               
-              {/* LocalStorage Data Boundary */}
+              {/* Campus Registry Verification */}
               <div className="p-5 rounded-2xl bg-slate-50 border border-slate-200 space-y-2">
                 <div className="flex items-center gap-2 text-slate-900 font-bold text-sm">
                   <Database className="w-4 h-4 text-teal-600" />
-                  <span>Browser LocalStorage Data Boundary</span>
+                  <span>Campus Registry Verification</span>
                 </div>
                 <p className="text-xs text-slate-600 leading-relaxed">
-                  CampusFind is architected as a client-side web application. All reports, tokens, and timeline statuses are stored locally in your browser&apos;s LocalStorage. Clearing your browsing data or site cache will reset stored entries back to sample seed records.
+                  Every report is assigned an official timestamp and a unique 12-digit registration token. Items can be tracked and verified across campus devices using your registration token.
                 </p>
               </div>
 

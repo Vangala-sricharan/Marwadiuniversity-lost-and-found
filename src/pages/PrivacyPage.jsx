@@ -41,30 +41,30 @@ export default function PrivacyPage() {
     },
     {
       num: '2',
-      title: 'Prototype Scope & Zero Centralized Database Architecture',
+      title: 'Portal Architecture & Registry Identification',
       icon: Database,
       content: (
         <div className="space-y-3">
           <p>
-            CampusFind operates with <strong>no central server database</strong> (no SQL server, Firebase, MongoDB, or remote cloud storage). 
+            CampusFind is an independent academic project demonstrating digital lost and found workflows for the Marwadi University campus community.
           </p>
           <p>
-            All submitted reports, registration tokens, and preferences exist exclusively within your local web browser session. Data entered on one computer, phone, or browser will <strong>not</strong> synchronize, transmit, or replicate to any other device or to Marwadi University central servers.
+            Submitted reports are cataloged using a 12-digit registration token. To ensure student safety, all personal contact details are automatically masked before any record is displayed publicly.
           </p>
         </div>
       )
     },
     {
       num: '3',
-      title: 'LocalStorage & Client-Side Data Storage',
+      title: 'Data Management & Privacy Protocols',
       icon: Lock,
       content: (
         <div className="space-y-3">
           <p>
-            When you report a lost or found item, the application writes a structured JSON document to your browser&apos;s <code>window.localStorage</code> under the key <code>campusfind_reports_v2</code>.
+            When you report a lost or found item, the information is cataloged to facilitate campus verification at Demonstration Desk MB315.
           </p>
           <p>
-            LocalStorage is unencrypted client-side web storage managed by your browser. Anyone with physical access to your device or browser developer tools can inspect the contents stored within LocalStorage.
+            Essential browser storage is utilized strictly for saving your session preferences, legal terms acceptance, and cookie settings.
           </p>
         </div>
       )
@@ -138,7 +138,7 @@ export default function PrivacyPage() {
             Every report receives a 12-digit numeric registration token (formatted as <code>DDMMYYYYHHmm</code> based on submission timestamp).
           </p>
           <p>
-            The token functions as a query key within your browser&apos;s LocalStorage. Entering this token on the Track Report page queries stored items on that specific browser. The token does not grant access to external university databases or registrar records.
+            The token functions as a query key within the CampusFind portal. Entering this token on the Track Report page retrieves report details and current lifecycle status for verification.
           </p>
         </div>
       )
@@ -165,7 +165,7 @@ export default function PrivacyPage() {
       content: (
         <div className="space-y-3">
           <p>
-            CampusFind uses essential LocalStorage to maintain report records, your legal consent acknowledgment, and your cookie preferences.
+            CampusFind uses essential browser storage to preserve your legal consent acknowledgment and cookie preferences.
           </p>
           <p>
             We do not use advertising cookies, behavior-tracking beacons, or third-party marketing pixels. You can review or adjust your browser storage settings at any time using our preferences panel.
@@ -198,18 +198,13 @@ export default function PrivacyPage() {
     },
     {
       num: '11',
-      title: 'Data Retention & Cache Clearing',
+      title: 'Record Retention & Student Guidelines',
       icon: Trash2,
       content: (
         <div className="space-y-3">
           <p>
-            Because data is retained locally in your browser&apos;s LocalStorage, records remain stored until:
+            Reports and tokens remain active in the portal registry throughout the academic term to allow students to verify items and complete recovery at MB315.
           </p>
-          <ul className="list-disc list-inside space-y-1.5 text-slate-700 pl-2">
-            <li>You manually clear your browser cookies, site data, or cache.</li>
-            <li>You browse in Private / Incognito mode (data is discarded when the incognito window closes).</li>
-            <li>Browser storage quotas are reached or cleared by operating system storage maintenance.</li>
-          </ul>
           <p className="text-slate-600 text-xs">
             We recommend recording your 12-digit registration token or downloading the printable QR badge immediately upon report confirmation.
           </p>
@@ -302,7 +297,7 @@ export default function PrivacyPage() {
               Privacy Policy
             </h1>
             <p className="mt-3 text-slate-300 text-sm sm:text-base leading-relaxed">
-              Complete disclosure regarding client-side LocalStorage, personal contact masking, QR code recovery routes, and zero server storage architecture.
+              Complete disclosure regarding data privacy, personal contact masking, QR code recovery routes, and student safety protocols.
             </p>
           </div>
         </div>
@@ -315,7 +310,7 @@ export default function PrivacyPage() {
               Independent Student Prototype Notice
             </p>
             <p className="text-amber-900">
-              CampusFind is an independent student-developed prototype created for academic demonstration purposes. It is not an official Marwadi University website or university-authorized service. All information entered remains stored strictly within your local browser session.
+              CampusFind is an independent student-developed prototype created for academic demonstration purposes. It is not an official Marwadi University website or university-authorized service. Submissions are processed to demonstrate digital lost and found workflows for the campus community.
             </p>
           </div>
         </div>

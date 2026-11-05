@@ -151,7 +151,7 @@ export default function LegalConsentGate({ children }) {
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal-400 font-bold">•</span>
-                    <span>Submissions are stored client-side in browser LocalStorage without central server synchronization.</span>
+                    <span>Submissions are indexed by a 12-digit token with contact details masked for student privacy protection.</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <span className="text-teal-400 font-bold">•</span>
@@ -249,7 +249,7 @@ export default function LegalConsentGate({ children }) {
                 >
                   CampusFind Terms &amp; Conditions
                 </button>
-                , including its academic prototype status, LocalStorage boundaries, and user conduct rules.
+                , including its academic prototype status, data privacy guidelines, and user conduct rules.
               </span>
             </label>
 

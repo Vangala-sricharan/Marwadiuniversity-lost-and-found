@@ -130,13 +130,13 @@ export default function CookieModal({ isOpen, onClose }) {
             <div className="space-y-1">
               <div className="flex items-center gap-2">
                 <Lock className="w-4 h-4 text-teal-600" />
-                <span className="font-bold text-slate-900">Essential Browser Storage (LocalStorage)</span>
+                <span className="font-bold text-slate-900">Essential Preferences &amp; Session Storage</span>
                 <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-teal-100 text-teal-800 uppercase tracking-wider">
                   Always Required
                 </span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed">
-                Required for the core functionality of CampusFind. Stores your lost/found reports, 12-digit registration tokens, QR code references, and legal consent state locally on your device.
+                Required for the core preferences of CampusFind. Stores your legal consent state and cookie preferences on your device.
               </p>
             </div>
             <div className="shrink-0 mt-1">
